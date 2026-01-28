@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+dist/
+.pnp
+.pnp.js
+
+# Environment
+.env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Build artifacts
+*.zip
+*.tar.gz
+*.log
+*.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+backend/uploads/
+graphs/
+
+# Scripts (not part of source)
+build_real_history.py
+perfect_history.py
+fake_history.py
+generate_graphs*.py
+GenerateGraphs.cs
+generate_graphs*.exe
+test_ws.py
+temp_docker_ws_chat.py
+demo
+pqc-secure-comm-backend/
+pqc-secure-comm.zip
