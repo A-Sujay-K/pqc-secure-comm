@@ -12,55 +12,53 @@ a dynamic threat-level heuristic.
 - **Crypto**: Kyber-768 KEM + Dilithium-3 + AES-256-GCM (Standard); Simulated QKD (Critical)
 - **Threat Analyzer**: `Q_TL = (w1*S + w2*I) / (w3*A_K)` determines routing lane
 
-## Threat Level Heuristic
+## API Endpoints
 
-The routing decision is made by the Quantum Threat Level formula:
+### Authentication
+```
+POST /api/v1/auth/register   — Register new user
+POST /api/v1/auth/login      — Login and get JWT token
+```
+
+### Telemetry
+```
+GET /api/v1/telemetry/snapshot  — Get real-time system snapshot
+WS  /ws/telemetry               — Live telemetry WebSocket feed
+```
+
+### Chat
+```
+WS  /ws/chat?token=<jwt>        — Authenticated chat WebSocket
+```
+
+### Health
+```
+GET /api/v1/health              — Health check for MongoDB + Redis
+```
+
+## Threat Level Heuristic
 
 ```
 Q_TL = (w1 * S + w2 * I) / (w3 * A_K)
 
-Where:
-  S   = Message sensitivity score [0.0, 1.0] based on file type / content
-  I   = Normalized sender priority (priority / 10)
-  A_K = Available QKD keys in the key pool
+S   = Sensitivity [0.0, 1.0]   — based on file type and high_security flag
+I   = Normalized priority       — sender_priority / 10
+A_K = Available QKD keys
 
-Default weights: w1=0.4, w2=0.3, w3=0.3
-Routing threshold: Q_TL >= 0.7 => Critical Lane; Q_TL < 0.7 => Standard Lane
-```
-
-If the key pool is empty (A_K = 0), the message is buffered in the Redis priority
-queue until a new key is generated, and the sender receives a 'Securing connection...'
-status update.
-
-## Project Structure
-
-```
-pqc-secure-comm/
-├── backend/          # FastAPI backend
-│   ├── app/
-│   │   ├── api/      # REST routes
-│   │   ├── core/     # Threat analyzer, routing engine, crypto engine
-│   │   ├── db/       # MongoDB + Redis clients
-│   │   ├── models/   # Document type definitions
-│   │   ├── schemas/  # Pydantic request/response models
-│   │   ├── services/ # QKD daemon, crypto, telemetry, file storage
-│   │   └── ws/       # WebSocket endpoints
-│   └── tests/
-├── frontend-user/    # React chat client
-├── frontend-supervisor/ # React supervisor dashboard
-└── infra/            # Docker, Nginx, Redis, Mongo configs
+Q_TL >= 0.7  =>  Critical Lane (QKD + AES-256-GCM)
+Q_TL <  0.7  =>  Standard Lane (Kyber-768 + Dilithium-3 + AES-256-GCM)
+A_K  == 0    =>  Buffer in Redis priority queue, send 'Securing connection...'
 ```
 
 ## Quick Start
 
 ```bash
-# 1. Start all infrastructure
+git clone https://github.com/A-Sujay-K/pqc-secure-comm.git
+cd pqc-secure-comm
 docker-compose up --build
-
-# 2. Or run backend locally
-cd backend && pip install -r requirements.txt
-uvicorn app.main:app --reload
-
-# 3. Run frontend
-cd frontend-user && npm install && npm run dev
 ```
+
+Access:
+- **Chat App**: http://localhost:5173
+- **Supervisor Dashboard**: http://localhost:5174
+- **API Docs**: http://localhost:8000/docs
