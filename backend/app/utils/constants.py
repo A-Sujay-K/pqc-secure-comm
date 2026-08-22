@@ -7,20 +7,22 @@ SECURITY_BANNER = "security_banner"
 SYSTEM_MESSAGE = "system_message"
 ENCRYPTION_STATUS = "encryption_status"
 TELEMETRY_UPDATE = "telemetry_update"
-KEY_POOL_UPDATE = "key_pool_update"
+USER_STATUS = "user_status"
+DELIVERY_CONFIRMATION = "delivery_confirmation"
 
-# Encryption lane identifiers
+# Encryption Lanes
 LANE_STANDARD = "standard"
 LANE_CRITICAL = "critical"
 
-# Redis key prefixes
-KEY_POOL_PREFIX = "qkd:keys"
-PRIORITY_QUEUE_KEY = "pq:critical"
-ONLINE_STATUS_PREFIX = "status:online:"
-TYPING_PREFIX = "typing:"
+# Redis Keys
+KEY_POOL = "qkd:keys"
+KEY_POOL_SET_KEY = "qkd:available_keys"
+PRIORITY_QUEUE_KEY = "pq:critical:queue"
+ONLINE_STATUS = "status:online:"
+TYPING = "typing:"
 
-# Threat analyzer defaults (real values come from Settings)
-DEFAULT_THREAT_THRESHOLD = 0.7
+# Heuristic routing constants
 DEFAULT_W1 = 0.4
 DEFAULT_W2 = 0.3
 DEFAULT_W3 = 0.3
+DEFAULT_THREAT_THRESHOLD = 0.7
