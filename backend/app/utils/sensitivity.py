@@ -1,42 +1,39 @@
-from __future__ import annotations
+import os
+from typing import Optional
 
 EXTENSION_SCORES: dict[str, float] = {
-    # Low sensitivity
-    ".txt": 0.1, ".md": 0.1, ".csv": 0.15, ".log": 0.1,
-    # Medium
-    ".jpg": 0.3, ".jpeg": 0.3, ".png": 0.3, ".gif": 0.25,
-    ".mp3": 0.3, ".mp4": 0.35,
-    # High
-    ".pdf": 0.5, ".doc": 0.55, ".docx": 0.55,
-    ".xls": 0.55, ".xlsx": 0.55, ".ppt": 0.5,
-    # Critical
-    ".key": 0.8, ".pem": 0.9, ".p12": 0.85, ".pfx": 0.85,
-    ".gpg": 0.8, ".env": 0.75, ".exe": 0.7, ".bin": 0.65,
-    ".dll": 0.65, ".zip": 0.5, ".7z": 0.55, ".tar": 0.5,
+    # Plain text: 0.10
+    ".txt": 0.10, ".md": 0.10, ".csv": 0.10, ".log": 0.10,
+    # Media files: 0.25
+    ".jpg": 0.25, ".jpeg": 0.25, ".png": 0.25, ".gif": 0.25, ".mp3": 0.25, ".mp4": 0.25,
+    # Documents: 0.45
+    ".pdf": 0.45, ".doc": 0.45, ".docx": 0.45, ".xls": 0.45, ".xlsx": 0.45, ".ppt": 0.45,
+    # Credentials: 0.85
+    ".key": 0.85, ".pem": 0.85, ".p12": 0.85, ".pfx": 0.85, ".gpg": 0.85,
+    ".env": 0.85, ".exe": 0.85, ".bin": 0.85, ".dll": 0.85, ".zip": 0.85,
+    ".7z": 0.85, ".tar": 0.85
 }
 
-_HIGH_SECURITY_BOOST = 0.4
-
-
-def get_sensitivity_score(filename: str | None, high_security: bool = False) -> float:
+def get_sensitivity_score(filename: Optional[str], content: Optional[str] = None, high_security: bool = False) -> float:
     """
-    Compute the sensitivity score for a message.
-
-    Args:
-        filename: The name of an attached file, or None for text-only messages.
-        high_security: If True, adds a 0.4 boost (capped at 1.0).
-
-    Returns:
-        A float in [0.0, 1.0].
+    Calculates the sensitivity score S in [0.0, 1.0] for the Threat Analyzer.
     """
-    if filename is None:
-        base = 0.5 if high_security else 0.1
-        return min(base, 1.0)
+    score = 0.10
+    
+    # 1. File extension check
+    if filename:
+        ext = os.path.splitext(filename)[1].lower()
+        score = max(score, EXTENSION_SCORES.get(ext, 0.25))
 
-    ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    base = EXTENSION_SCORES.get(ext, 0.3)
+    # 2. Content keyword check
+    if content:
+        content_lower = content.lower()
+        sensitive_keywords = ["password", "secret", "confidential", "key", "classified", "urgent", "private"]
+        if any(keyword in content_lower for keyword in sensitive_keywords):
+            score = max(score, 0.85)
 
+    # 3. High security mode adds 0.40 boost (or overrides)
     if high_security:
-        base = min(base + _HIGH_SECURITY_BOOST, 1.0)
+        score = min(1.0, score + 0.40)
 
-    return base
+    return min(1.0, score)
