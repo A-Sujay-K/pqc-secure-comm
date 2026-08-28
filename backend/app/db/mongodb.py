@@ -1,49 +1,34 @@
-from __future__ import annotations
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from typing import Optional
 from loguru import logger
+import pymongo
 
-_client: AsyncIOMotorClient | None = None
-_db: AsyncIOMotorDatabase | None = None
+_client: Optional[AsyncIOMotorClient] = None
+_db: Optional[AsyncIOMotorDatabase] = None
 
-
-async def init_mongodb(uri: str, db_name: str) -> None:
-    """Initialize the MongoDB client and create required indexes."""
+async def init_mongodb(uri: str, db_name: str):
     global _client, _db
+    logger.info("Initializing MongoDB connection...")
     _client = AsyncIOMotorClient(uri)
     _db = _client[db_name]
-    logger.info(f"Connected to MongoDB database: {db_name}")
-
-    await _create_indexes()
-
-
-async def _create_indexes() -> None:
-    """Create performance indexes on all collections."""
-    # Users collection
-    await _db["users"].create_index("username", unique=True)
-    await _db["users"].create_index("email", unique=True)
-
-    # Messages collection
-    await _db["messages"].create_index([("sender_id", 1), ("recipient_id", 1)])
-    await _db["messages"].create_index("created_at")
-
-    # QKD Keys collection
-    await _db["qkd_keys"].create_index("consumed")
-    await _db["qkd_keys"].create_index("generated_at")
-
-    logger.info("MongoDB indexes created successfully")
-
+    
+    # Create indexes
+    try:
+        await _db["users"].create_index([("username", pymongo.ASCENDING), ("email", pymongo.ASCENDING)], unique=True)
+        await _db["messages"].create_index([("sender_id", pymongo.ASCENDING), ("recipient_id", pymongo.ASCENDING), ("created_at", pymongo.DESCENDING)])
+        await _db["qkd_keys"].create_index([("consumed", pymongo.ASCENDING), ("generated_at", pymongo.ASCENDING)])
+        await _db["telemetry_events"].create_index([("timestamp", pymongo.DESCENDING)])
+        logger.info("MongoDB indexes created successfully.")
+    except Exception as e:
+        logger.error(f"Error creating MongoDB indexes: {e}")
 
 def get_database() -> AsyncIOMotorDatabase:
-    """Return the active database instance."""
     if _db is None:
-        raise RuntimeError("MongoDB has not been initialized. Call init_mongodb() first.")
+        raise RuntimeError("MongoDB is not initialized.")
     return _db
 
-
-async def close_mongodb() -> None:
-    """Close the MongoDB client connection."""
+async def close_mongodb():
     global _client
     if _client:
         _client.close()
-        _client = None
-        logger.info("MongoDB connection closed")
+        logger.info("MongoDB connection closed.")

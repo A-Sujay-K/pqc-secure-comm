@@ -1,28 +1,23 @@
-from __future__ import annotations
 from typing import TypedDict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
-import secrets
 
 COLLECTION = "qkd_keys"
 
-
 class QKDKeyDoc(TypedDict):
     _id: str
-    key_hex: str          # 64 hex chars = 256 bits
+    key_hex: str
     consumed: bool
     consumed_by_message_id: Optional[str]
     generated_at: datetime
     consumed_at: Optional[datetime]
 
-
-def create_key_doc() -> dict:
-    """Generate a new 256-bit QKD key document."""
+def create_key_doc(key_hex: str) -> QKDKeyDoc:
     return {
         "_id": str(ObjectId()),
-        "key_hex": secrets.token_hex(32),  # 32 bytes = 256 bits
+        "key_hex": key_hex,
         "consumed": False,
         "consumed_by_message_id": None,
-        "generated_at": datetime.utcnow(),
-        "consumed_at": None,
+        "generated_at": datetime.now(timezone.utc),
+        "consumed_at": None
     }

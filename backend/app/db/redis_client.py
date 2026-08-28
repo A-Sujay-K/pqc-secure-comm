@@ -1,29 +1,27 @@
-from __future__ import annotations
 import redis.asyncio as redis
+from typing import Optional
 from loguru import logger
 
-_redis: redis.Redis | None = None
+_redis: Optional[redis.Redis] = None
 
-
-async def init_redis(uri: str) -> None:
-    """Initialize the async Redis connection pool."""
+async def init_redis(uri: str):
     global _redis
-    _redis = await redis.from_url(uri, decode_responses=True)
-    await _redis.ping()
-    logger.info("Redis connection established")
-
+    logger.info("Initializing Redis connection...")
+    _redis = redis.from_url(uri, decode_responses=True)
+    # Test connection
+    try:
+        await _redis.ping()
+        logger.info("Redis connection established.")
+    except Exception as e:
+        logger.error(f"Error connecting to Redis: {e}")
 
 def get_redis() -> redis.Redis:
-    """Return the active Redis instance."""
     if _redis is None:
-        raise RuntimeError("Redis has not been initialized. Call init_redis() first.")
+        raise RuntimeError("Redis is not initialized.")
     return _redis
 
-
-async def close_redis() -> None:
-    """Close the Redis connection."""
+async def close_redis():
     global _redis
     if _redis:
-        await _redis.aclose()
-        _redis = None
-        logger.info("Redis connection closed")
+        await _redis.close()
+        logger.info("Redis connection closed.")
