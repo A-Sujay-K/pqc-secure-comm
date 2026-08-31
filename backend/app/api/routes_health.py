@@ -1,35 +1,40 @@
-from __future__ import annotations
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
+import time
 from app.db.mongodb import get_database
 from app.db.redis_client import get_redis
-from loguru import logger
 
-router = APIRouter(prefix="/health", tags=["Health"])
+router = APIRouter(tags=["Health"])
 
+@router.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": time.time()
+    }
 
-@router.get("")
-async def health_check(
-    db=Depends(get_database),
-    redis=Depends(get_redis),
-):
-    """Return the health status of all services."""
-    mongo_ok = False
-    redis_ok = False
-
+@router.get("/readiness")
+async def readiness_check():
+    db = get_database()
+    redis_client = get_redis()
+    
+    db_status = "ok"
+    redis_status = "ok"
+    
     try:
         await db.command("ping")
-        mongo_ok = True
     except Exception as e:
-        logger.error(f"MongoDB health check failed: {e}")
-
+        db_status = f"error: {str(e)}"
+        
     try:
-        await redis.ping()
-        redis_ok = True
+        await redis_client.ping()
     except Exception as e:
-        logger.error(f"Redis health check failed: {e}")
-
+        redis_status = f"error: {str(e)}"
+        
+    is_ready = db_status == "ok" and redis_status == "ok"
+    
     return {
-        "status": "healthy" if mongo_ok and redis_ok else "degraded",
-        "mongodb": "ok" if mongo_ok else "error",
-        "redis": "ok" if redis_ok else "error",
+        "ready": is_ready,
+        "mongodb": db_status,
+        "redis": redis_status,
+        "timestamp": time.time()
     }

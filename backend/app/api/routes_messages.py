@@ -1,56 +1,35 @@
-from __future__ import annotations
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from fastapi import APIRouter, Depends, Query
+from app.services.message_service import get_message_history, get_unread_count
+from app.api.routes_auth import get_current_user
 from app.db.mongodb import get_database
-from app.models.message import COLLECTION as MESSAGES_COL
-from app.schemas.message_schemas import MessageResponse
-from datetime import datetime
 
 router = APIRouter(prefix="/messages", tags=["Messages"])
 
-
-@router.get("/history/{peer_id}", response_model=List[MessageResponse])
-async def get_message_history(
+@router.get("/history/{peer_id}")
+async def fetch_history(
     peer_id: str,
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=100),
-    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: dict = Depends(get_current_user)
 ):
-    """Fetch paginated message history between the current user and a peer."""
-    skip = (page - 1) * per_page
-
-    # In a real implementation, current_user_id comes from JWT dependency
-    # Using peer_id as both sides for simplicity in this demo
-    query = {
-        "$or": [
-            {"sender_id": peer_id},
-            {"recipient_id": peer_id},
-        ]
+    db = get_database()
+    messages, total = await get_message_history(
+        db=db,
+        user_id=str(current_user["_id"]),
+        peer_id=peer_id,
+        page=page,
+        per_page=per_page
+    )
+    return {
+        "items": messages,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": (total + per_page - 1) // per_page
     }
 
-    cursor = (
-        db[MESSAGES_COL]
-        .find(query)
-        .sort("created_at", -1)
-        .skip(skip)
-        .limit(per_page)
-    )
-    docs = await cursor.to_list(per_page)
-
-    return [
-        MessageResponse(
-            id=doc["_id"],
-            sender_id=doc["sender_id"],
-            recipient_id=doc["recipient_id"],
-            content=doc.get("content"),
-            file_url=doc.get("file_url"),
-            file_name=doc.get("file_name"),
-            file_size=doc.get("file_size"),
-            encryption_lane=doc["encryption_lane"],
-            threat_score=doc["threat_score"],
-            is_read=doc["is_read"],
-            created_at=doc["created_at"],
-        )
-        for doc in docs
-    ]
+@router.get("/unread")
+async def fetch_unread(current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    counts = await get_unread_count(db, str(current_user["_id"]))
+    return counts

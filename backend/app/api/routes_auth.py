@@ -1,59 +1,95 @@
-from __future__ import annotations
-from fastapi import APIRouter, HTTPException, status, Depends
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.db.mongodb import get_database
-from app.schemas.auth_schemas import RegisterRequest, LoginRequest, TokenResponse, UserResponse
-from app.models.user import COLLECTION as USERS_COL, create_user_doc
-from app.utils.security import hash_password, verify_password, create_jwt_token
-from app.config import get_settings
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from loguru import logger
+from app.schemas.auth_schemas import RegisterRequest, LoginRequest, TokenResponse, UserResponse
+from app.services.user_service import create_user, authenticate_user, get_user_by_username, get_all_users
+from app.utils.security import create_jwt_token, decode_jwt_token
+from app.db.mongodb import get_database
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(req: RegisterRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Register a new user account."""
-    # Check for duplicate username or email
-    if await db[USERS_COL].find_one({"username": req.username}):
-        raise HTTPException(status_code=409, detail="Username already taken")
-    if await db[USERS_COL].find_one({"email": req.email}):
-        raise HTTPException(status_code=409, detail="Email already registered")
-
-    doc = create_user_doc(
-        username=req.username,
-        email=req.email,
-        hashed_password=hash_password(req.password),
-        display_name=req.display_name,
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+    """
+    Dependency to get the current authenticated user from JWT Bearer token.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
     )
-    await db[USERS_COL].insert_one(doc)
-    logger.info(f"New user registered: {req.username}")
+    
+    payload = decode_jwt_token(token)
+    if payload is None:
+        raise credentials_exception
+        
+    username: str = payload.get("username")
+    if username is None:
+        raise credentials_exception
+        
+    db = get_database()
+    user = await get_user_by_username(db, username)
+    if user is None:
+        raise credentials_exception
+        
+    return user
 
-    return UserResponse(
-        id=doc["_id"],
-        username=doc["username"],
-        email=doc["email"],
-        display_name=doc["display_name"],
-        avatar_color=doc["avatar_color"],
-        priority=doc["priority"],
-        is_online=doc["is_online"],
-        created_at=doc["created_at"],
-    )
-
+@router.post("/register", response_model=TokenResponse)
+async def register(register_data: RegisterRequest):
+    db = get_database()
+    
+    # Check if username exists
+    existing_user = await get_user_by_username(db, register_data.username)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered"
+        )
+        
+    # Create user
+    user = await create_user(db, register_data)
+    logger.info(f"New user registered: {user['username']}")
+    
+    # Generate token — use _id as user_id
+    token = create_jwt_token(user_id=str(user["_id"]), username=user["username"])
+    return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/login", response_model=TokenResponse)
-async def login(req: LoginRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Authenticate a user and return a JWT access token."""
-    settings = get_settings()
-    user = await db[USERS_COL].find_one({"username": req.username})
-    if not user or not verify_password(req.password, user["hashed_password"]):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+async def login(login_data: LoginRequest):
+    db = get_database()
+    
+    user = await authenticate_user(db, login_data.username, login_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    # Generate token — use _id as user_id
+    token = create_jwt_token(user_id=str(user["_id"]), username=user["username"])
+    return {"access_token": token, "token_type": "bearer"}
 
-    token = create_jwt_token(
-        user_id=user["_id"],
-        username=user["username"],
-        secret=settings.JWT_SECRET,
-        algorithm=settings.JWT_ALGORITHM,
-        expiry_minutes=settings.JWT_EXPIRY_MINUTES,
-    )
-    return TokenResponse(access_token=token)
+@router.get("/me", response_model=UserResponse)
+async def read_users_me(current_user: dict = Depends(get_current_user)):
+    return _user_to_response(current_user)
+
+@router.get("/users", response_model=list[UserResponse])
+async def read_all_users(current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    users = await get_all_users(db, exclude_id=str(current_user["_id"]))
+    return [_user_to_response(u) for u in users]
+
+def _user_to_response(user: dict) -> dict:
+    """Maps a MongoDB user doc to UserResponse schema."""
+    return {
+        "id": str(user["_id"]),
+        "username": user["username"],
+        "email": user.get("email", ""),
+        "display_name": user.get("display_name", user["username"]),
+        "avatar_color": user.get("avatar_color", "#3357FF"),
+        "priority": user.get("priority", 5),
+        "is_online": user.get("is_online", False),
+        "last_seen": user.get("last_seen"),
+        "created_at": user.get("created_at"),
+    }
