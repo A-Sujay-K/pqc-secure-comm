@@ -1,55 +1,68 @@
-from __future__ import annotations
 import asyncio
-import secrets
-from app.services.key_pool_service import push_key
-from app.db.mongodb import get_database
-from app.models.key_entry import COLLECTION as KEYS_COL, create_key_doc
+import os
 from loguru import logger
+from app.config import get_settings
+from app.db.mongodb import get_database
+from app.db.redis_client import get_redis
+from app.services.key_pool_service import add_key
+from app.core.priority_queue import release_queued_messages
+from app.models.telemetry_event import create_telemetry_event
+from app.services.telemetry_service import record_event
+from app.ws.connection_manager import manager as connection_manager
+import app.core.crypto_engine as crypto_engine
+import app.services.key_pool_service as key_pool_service
 
-_daemon_task: asyncio.Task | None = None
+_task: asyncio.Task | None = None
 
-
-async def _qkd_generation_loop(interval_seconds: int) -> None:
-    """Background loop that generates one 256-bit QKD key every `interval_seconds`."""
-    logger.info(f"QKD Daemon started (interval={interval_seconds}s)")
+async def _generate_key_loop():
+    """
+    Infinite loop: periodically generates QKD keys and releases buffered messages.
+    """
+    settings = get_settings()
+    db = get_database()
+    redis_client = get_redis()
+    
+    logger.info(f"QKD Daemon started. Generating key every {settings.QKD_GENERATION_INTERVAL} seconds.")
+    
     while True:
         try:
-            # Generate a new 256-bit key
-            key_hex = secrets.token_hex(32)
-
-            # Push to Redis pool
-            await push_key(key_hex)
-
-            # Persist to MongoDB for auditability
-            db = get_database()
-            doc = create_key_doc()
-            doc["key_hex"] = key_hex
-            await db[KEYS_COL].insert_one(doc)
-
-            logger.debug(f"QKD Daemon generated new key: {key_hex[:8]}...")
+            # 1. Generate 256-bit key
+            key_bytes = os.urandom(32)
+            key_hex = key_bytes.hex()
+            
+            # 2. Store key
+            await add_key(db, redis_client, key_hex)
+            logger.info("Generated and stored new QKD key.")
+            
+            # 3. Log telemetry
+            await record_event(db, "qkd_key_generated", {"key_id": key_hex[:16] + "..."})
+            
+            # 4. Release queued messages if any
+            await release_queued_messages(redis_client, db, key_pool_service, crypto_engine, connection_manager)
+            
         except asyncio.CancelledError:
-            logger.info("QKD Daemon received cancellation signal")
-            raise
+            logger.info("QKD Daemon task cancelled.")
+            break
         except Exception as e:
-            logger.error(f"QKD Daemon error: {e}")
+            logger.error(f"Error in QKD generation loop: {e}")
+            
+        await asyncio.sleep(settings.QKD_GENERATION_INTERVAL)
 
-        await asyncio.sleep(interval_seconds)
+async def start_qkd_daemon():
+    """Starts the QKD Daemon background task."""
+    global _task
+    if _task is None:
+        _task = asyncio.create_task(_generate_key_loop())
+        logger.info("QKD Daemon initialized.")
 
-
-async def start_qkd_daemon(interval_seconds: int = 10) -> None:
-    """Start the QKD key generation daemon as a background task."""
-    global _daemon_task
-    _daemon_task = asyncio.create_task(_qkd_generation_loop(interval_seconds))
-    logger.info("QKD Daemon task created")
-
-
-async def stop_qkd_daemon() -> None:
-    """Stop the QKD daemon gracefully."""
-    global _daemon_task
-    if _daemon_task and not _daemon_task.done():
-        _daemon_task.cancel()
+async def stop_qkd_daemon():
+    """Stops the QKD Daemon background task."""
+    global _task
+    if _task is not None:
+        _task.cancel()
         try:
-            await _daemon_task
+            await _task
         except asyncio.CancelledError:
             pass
-    logger.info("QKD Daemon stopped")
+        _task = None
+        logger.info("QKD Daemon stopped.")

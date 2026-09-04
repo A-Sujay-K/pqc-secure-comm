@@ -1,30 +1,65 @@
-from __future__ import annotations
-from app.db.redis_client import get_redis
-from app.utils.constants import KEY_POOL_PREFIX
 from loguru import logger
+from app.models.key_entry import create_key_doc, COLLECTION as KEYS_COL
+from app.utils.constants import KEY_POOL_SET_KEY
 
+from app.config import get_settings
 
-async def get_available_key_count() -> int:
-    """Return the number of QKD keys currently available in the Redis pool."""
-    redis = get_redis()
-    count = await redis.llen(KEY_POOL_PREFIX)
-    return count or 0
-
-
-async def pop_key() -> str | None:
+async def add_key(db, redis_client, key_hex: str) -> str | None:
     """
-    Pop and return one QKD key_hex from the Redis pool (FIFO).
-    Returns None if the pool is empty.
+    Inserts a newly generated key into MongoDB and Redis available pool,
+    enforcing reservoir capacity K_max.
     """
-    redis = get_redis()
-    key_hex = await redis.lpop(KEY_POOL_PREFIX)
-    if key_hex:
-        logger.debug(f"Popped QKD key from pool (pool size now: {await get_available_key_count()})")
+    settings = get_settings()
+    current_count = await get_available_count(redis_client)
+    if current_count >= settings.K_MAX:
+        logger.debug(f"Key pool at capacity ({current_count}/{settings.K_MAX}). Key discarded.")
+        return None
+
+    key_doc = create_key_doc(key_hex=key_hex)
+    
+    # 1. Store in MongoDB
+    result = await db[KEYS_COL].insert_one(key_doc)
+    
+    # 2. Add to Redis Set
+    await redis_client.sadd(KEY_POOL_SET_KEY, key_hex)
+    
+    return str(result.inserted_id)
+
+async def consume_key(db, redis_client) -> str | None:
+    """
+    Retrieves and removes a key from the Redis available pool, marks it consumed in MongoDB.
+    """
+    # 1. Pop from Redis (atomic)
+    key_hex = await redis_client.spop(KEY_POOL_SET_KEY)
+    
+    if not key_hex:
+        return None
+        
+    # 2. Mark consumed in MongoDB
+    from datetime import datetime, timezone
+    await db[KEYS_COL].update_one(
+        {"key_hex": key_hex},
+        {"$set": {"consumed": True, "consumed_at": datetime.now(timezone.utc)}}
+    )
+    
     return key_hex
 
+async def get_available_count(redis_client) -> int:
+    """
+    Returns the number of keys currently in the Redis available pool.
+    """
+    return await redis_client.scard(KEY_POOL_SET_KEY)
 
-async def push_key(key_hex: str) -> None:
-    """Push a new QKD key_hex onto the right end of the Redis pool (FIFO)."""
-    redis = get_redis()
-    await redis.rpush(KEY_POOL_PREFIX, key_hex)
-    logger.debug(f"Pushed new QKD key (pool size now: {await redis.llen(KEY_POOL_PREFIX)})")
+async def get_pool_stats(db, redis_client) -> dict:
+    """
+    Returns comprehensive stats about the key pool.
+    """
+    available = await get_available_count(redis_client)
+    total_generated = await db[KEYS_COL].count_documents({})
+    consumed = await db[KEYS_COL].count_documents({"consumed": True})
+    
+    return {
+        "available": available,
+        "total_generated": total_generated,
+        "consumed": consumed
+    }
