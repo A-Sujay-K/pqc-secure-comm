@@ -1,29 +1,39 @@
-from __future__ import annotations
 import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.services.telemetry_service import get_telemetry_snapshot
 from loguru import logger
+from app.ws.connection_manager import manager
+from app.db.mongodb import get_database
+from app.db.redis_client import get_redis
+from app.services.telemetry_service import get_snapshot
 
-router = APIRouter(tags=["Telemetry WebSocket"])
-
-_telemetry_clients: set[WebSocket] = set()
-
+router = APIRouter()
 
 @router.websocket("/ws/telemetry")
-async def websocket_telemetry(websocket: WebSocket):
-    """Broadcast real-time telemetry snapshots to supervisor clients."""
-    await websocket.accept()
-    _telemetry_clients.add(websocket)
-    logger.info(f"Telemetry WebSocket connected ({len(_telemetry_clients)} clients)")
-
+async def websocket_telemetry_endpoint(websocket: WebSocket):
+    db = get_database()
+    redis_client = get_redis()
+    
+    await manager.connect_telemetry(websocket)
+    
     try:
         while True:
-            snapshot = await get_telemetry_snapshot()
-            await websocket.send_json(snapshot.model_dump())
-            await asyncio.sleep(2)   # push update every 2 seconds
-    except WebSocketDisconnect:
-        _telemetry_clients.discard(websocket)
-        logger.info(f"Telemetry WebSocket disconnected ({len(_telemetry_clients)} clients)")
+            # 1. Gather telemetry snapshot
+            snapshot = await get_snapshot(db, redis_client)
+            
+            # 2. Send to client in expected format
+            from datetime import datetime, timezone
+            await websocket.send_json({
+                "type": "telemetry_update",
+                "payload": snapshot,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            
+            # 3. Wait 2 seconds
+            await asyncio.sleep(2.0)
+            
+    except (WebSocketDisconnect, RuntimeError):
+        logger.info("Telemetry WebSocket disconnected")
     except Exception as e:
         logger.error(f"Telemetry WebSocket error: {e}")
-        _telemetry_clients.discard(websocket)
+    finally:
+        await manager.disconnect_telemetry(websocket)
