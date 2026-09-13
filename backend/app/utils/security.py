@@ -1,37 +1,36 @@
-from __future__ import annotations
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, InvalidHashError
+from argon2.exceptions import VerifyMismatchError
 import jwt
-from datetime import datetime, timedelta
-from loguru import logger
+from datetime import datetime, timedelta, timezone
+from app.config import get_settings, Settings
 
-_ph = PasswordHasher()
-
+ph = PasswordHasher()
 
 def hash_password(password: str) -> str:
-    """Hash a plaintext password using Argon2id."""
-    return _ph.hash(password)
-
+    """Hashes a password using Argon2."""
+    return ph.hash(password)
 
 def verify_password(password: str, hashed: str) -> bool:
-    """Verify a password against its Argon2 hash."""
+    """Verifies a password against its hash."""
     try:
-        return _ph.verify(hashed, password)
-    except (VerifyMismatchError, InvalidHashError):
+        ph.verify(hashed, password)
+        return True
+    except VerifyMismatchError:
         return False
 
+def create_jwt_token(user_id: str, username: str, settings: Settings | None = None) -> str:
+    """Creates a JWT access token. Settings are auto-resolved if not provided."""
+    if settings is None:
+        settings = get_settings()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRY_MINUTES)
+    to_encode = {"exp": expire, "sub": user_id, "username": username}
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-def create_jwt_token(user_id: str, username: str, secret: str, algorithm: str, expiry_minutes: int) -> str:
-    """Create a signed JWT token for a user."""
-    payload = {
-        "sub": user_id,
-        "username": username,
-        "exp": datetime.utcnow() + timedelta(minutes=expiry_minutes),
-        "iat": datetime.utcnow(),
-    }
-    return jwt.encode(payload, secret, algorithm=algorithm)
-
-
-def decode_jwt_token(token: str, secret: str, algorithm: str) -> dict:
-    """Decode and verify a JWT token. Raises jwt.PyJWTError on failure."""
-    return jwt.decode(token, secret, algorithms=[algorithm])
+def decode_jwt_token(token: str, settings: Settings | None = None) -> dict | None:
+    """Decodes and verifies a JWT token. Returns payload dict or None on failure."""
+    if settings is None:
+        settings = get_settings()
+    try:
+        return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+    except jwt.PyJWTError:
+        return None
