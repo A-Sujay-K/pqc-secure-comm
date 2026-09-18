@@ -1,30 +1,17 @@
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, patch, MagicMock, call
-
+from unittest.mock import patch, AsyncMock
+from app.services.key_pool_service import add_key
 
 @pytest.mark.asyncio
-async def test_qkd_daemon_generates_key():
-    """QKD daemon should push a key to Redis and save to MongoDB on each cycle."""
-    mock_redis = AsyncMock()
-    mock_redis.rpush = AsyncMock(return_value=1)
-    mock_redis.llen = AsyncMock(return_value=1)
-
-    mock_db = MagicMock()
-    mock_db["qkd_keys"].insert_one = AsyncMock(return_value=None)
-
-    with patch("app.services.qkd_daemon.push_key", new=AsyncMock()) as mock_push, \
-         patch("app.services.qkd_daemon.get_database", return_value=mock_db):
-
-        from app.services.qkd_daemon import _qkd_generation_loop
-
-        # Run only one iteration then cancel
-        task = asyncio.create_task(_qkd_generation_loop(interval_seconds=0))
-        await asyncio.sleep(0.1)
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert mock_push.call_count >= 1
+async def test_key_generation(mock_db, mock_redis):
+    # This tests the add_key function which is called by the daemon
+    key_hex = "0" * 64
+    inserted_id = await add_key(mock_db, mock_redis, key_hex)
+    
+    # Assert DB insert called
+    mock_db["keys"].insert_one.assert_called_once()
+    
+    # Assert Redis sadd called
+    mock_redis.sadd.assert_called_once_with("qkd:available_keys", key_hex)
+    
+    assert inserted_id == "test_id"

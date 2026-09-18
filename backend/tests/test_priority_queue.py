@@ -1,42 +1,46 @@
 import pytest
 import json
-import time
-from unittest.mock import AsyncMock, patch, MagicMock
+from app.core.priority_queue import enqueue, dequeue, get_queue_depth, compute_queue_score
+from app.utils.constants import PRIORITY_QUEUE_KEY
 
+def test_compute_queue_score():
+    # Higher QTL must yield lower score (to pop first from min-heap)
+    score_high = compute_queue_score(qtl=0.90, arrival_time=1700000100.0)
+    score_low = compute_queue_score(qtl=0.40, arrival_time=1700000100.0)
+    assert score_high < score_low
 
-@pytest.mark.asyncio
-async def test_enqueue_message():
-    """Messages should be added to the Redis sorted set with the correct score."""
-    mock_redis = AsyncMock()
-    mock_redis.zadd = AsyncMock(return_value=1)
-
-    with patch("app.core.priority_queue.get_redis", return_value=mock_redis):
-        from app.core.priority_queue import enqueue_message
-        await enqueue_message("msg-001", {"content": "test"}, score=100.0)
-        mock_redis.zadd.assert_called_once()
-        args = mock_redis.zadd.call_args
-        assert "msg-001" in args[0][1].keys().__iter__().__next__()  # message_id in entry JSON
-
+    # Equal QTL: earlier arrival time must yield lower score (FIFO for ties)
+    score_early = compute_queue_score(qtl=0.80, arrival_time=1700000100.0)
+    score_late = compute_queue_score(qtl=0.80, arrival_time=1700000200.0)
+    assert score_early < score_late
 
 @pytest.mark.asyncio
-async def test_dequeue_returns_none_on_empty():
-    """Dequeue on an empty queue should return None."""
-    mock_redis = AsyncMock()
-    mock_redis.zpopmin = AsyncMock(return_value=[])
-
-    with patch("app.core.priority_queue.get_redis", return_value=mock_redis):
-        from app.core.priority_queue import dequeue_oldest_message
-        result = await dequeue_oldest_message()
-        assert result is None
-
+async def test_enqueue(mock_redis):
+    mock_redis.zrank.return_value = 0
+    position = await enqueue(mock_redis, {"id": 1}, priority=5, qtl=0.7)
+    assert position == 0
+    mock_redis.zadd.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_get_queue_depth():
-    """Queue depth should return the Redis zcard value."""
-    mock_redis = AsyncMock()
-    mock_redis.zcard = AsyncMock(return_value=7)
+async def test_dequeue(mock_redis):
+    msg_data = {"id": 1, "test": "data"}
+    mock_redis.zpopmin.return_value = [(json.dumps(msg_data), 10.5)]
+    
+    result = await dequeue(mock_redis)
+    assert result is not None
+    data, score = result
+    assert data == msg_data
+    assert score == 10.5
+    mock_redis.zpopmin.assert_called_once()
 
-    with patch("app.core.priority_queue.get_redis", return_value=mock_redis):
-        from app.core.priority_queue import get_queue_depth
-        depth = await get_queue_depth()
-        assert depth == 7
+@pytest.mark.asyncio
+async def test_dequeue_empty(mock_redis):
+    mock_redis.zpopmin.return_value = []
+    result = await dequeue(mock_redis)
+    assert result is None
+
+@pytest.mark.asyncio
+async def test_queue_depth(mock_redis):
+    mock_redis.zcard.return_value = 42
+    depth = await get_queue_depth(mock_redis)
+    assert depth == 42
