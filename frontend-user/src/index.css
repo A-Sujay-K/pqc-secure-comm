@@ -2,40 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --color-bg-primary: #0f172a;
-    --color-bg-secondary: #1e293b;
-    --color-border: #334155;
-    --color-text-primary: #f1f5f9;
-    --color-text-muted: #94a3b8;
-    --color-accent: #6366f1;
-    --color-success: #10b981;
-    --color-warning: #f59e0b;
-    --color-danger: #ef4444;
+@layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
   }
-
-  body {
-    @apply bg-slate-900 text-slate-100;
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-
-  * {
-    @apply border-slate-700;
+  .glass-card {
+    @apply bg-dark-surface/80 backdrop-blur-lg border border-white/5 rounded-2xl shadow-xl;
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200;
-  }
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
-  .input-field {
-    @apply w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100
-           placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500;
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  .card {
-    @apply bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg;
-  }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.5) 0%, rgba(0, 212, 255, 0.5) 50%, rgba(124, 58, 237, 0.5) 100%);
+  background-size: 2000px 100%;
 }
