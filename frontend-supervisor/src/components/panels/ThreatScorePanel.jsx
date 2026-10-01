@@ -1,35 +1,38 @@
 import React from 'react';
-import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
-import { Shield } from 'lucide-react';
+import { useDashboardState } from '../../hooks/useDashboardState';
+import ThreatHeatmap from '../charts/ThreatHeatmap';
+import { ShieldAlert } from 'lucide-react';
 
-function getThreatColor(score) {
-  if (score >= 0.7) return '#ef4444';
-  if (score >= 0.4) return '#f59e0b';
-  return '#10b981';
-}
-
-export default function ThreatScorePanel({ avgThreat = 0 }) {
-  const pct = Math.round(avgThreat * 100);
-  const color = getThreatColor(avgThreat);
+const ThreatScorePanel = () => {
+  const { snapshot, chartData, alerts } = useDashboardState();
+  
+  if (!snapshot) return null;
+  const { routing } = snapshot;
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 shadow-xl">
-      <div className="flex items-center gap-2 mb-4">
-        <Shield size={16} className="text-slate-400" />
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Avg Threat Score</p>
-      </div>
-      <div className="relative h-36">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadialBarChart cx="50%" cy="100%" innerRadius="60%" outerRadius="90%"
-                          startAngle={180} endAngle={0} data={[{ value: pct, fill: color }]}>
-            <RadialBar dataKey="value" cornerRadius={6} background={{ fill: '#1e293b' }} />
-          </RadialBarChart>
-        </ResponsiveContainer>
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center">
-          <p className="text-3xl font-bold" style={{ color }}>{pct}%</p>
-          <p className="text-xs text-slate-400">Q_TL score</p>
+    <div className={`glass-panel p-5 flex flex-col h-full relative overflow-hidden ${alerts.highThreat ? 'border-health-warning/50' : ''}`}>
+      {alerts.highThreat && (
+        <div className="absolute top-0 right-0 w-32 h-32 bg-health-warning/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+      )}
+
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+          <ShieldAlert size={16} className="text-health-warning" /> Threat Analysis
+        </h2>
+        
+        <div className="text-right">
+          <div className="text-xs text-slate-400 uppercase">Avg Q_TL</div>
+          <div className={`text-2xl font-mono font-bold ${routing.avg_threat_score > 0.7 ? 'text-health-critical' : 'text-slate-300'}`}>
+            {routing.avg_threat_score?.toFixed(2) || '0.00'}
+          </div>
         </div>
+      </div>
+      
+      <div className="flex-1 min-h-0 -ml-2 -mb-2">
+         <ThreatHeatmap data={chartData?.threatScatter || []} threshold={0.7} />
       </div>
     </div>
   );
-}
+};
+
+export default ThreatScorePanel;

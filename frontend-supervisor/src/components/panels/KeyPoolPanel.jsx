@@ -1,40 +1,51 @@
 import React from 'react';
-import MetricCard from '../common/MetricCard';
+import { useDashboardState } from '../../hooks/useDashboardState';
+import KeyPoolGauge from '../charts/KeyPoolGauge';
 import { Key } from 'lucide-react';
 
-export default function KeyPoolPanel({ data }) {
-  const utilization = data
-    ? Math.round((data.consumed / Math.max(data.total_generated, 1)) * 100)
-    : 0;
+const KeyPoolPanel = () => {
+  const { snapshot, alerts } = useDashboardState();
+  
+  if (!snapshot) return null;
+  const { key_pool } = snapshot;
 
   return (
-    <div className="space-y-4">
-      <MetricCard
-        title="QKD Key Pool"
-        value={data?.available ?? 0}
-        subtitle={`${data?.consumed ?? 0} consumed of ${data?.total_generated ?? 0} generated`}
-        icon={Key}
-        color="indigo"
-      />
-      {/* Pool utilization bar */}
-      <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-4">
-        <div className="flex justify-between text-xs text-slate-400 mb-2">
-          <span>Pool Utilization</span>
-          <span>{utilization}%</span>
-        </div>
-        <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${utilization}%`,
-              backgroundColor: utilization > 80 ? '#ef4444' : utilization > 60 ? '#f59e0b' : '#10b981',
-            }}
+    <div className={`glass-panel p-5 flex flex-col h-full relative overflow-hidden ${alerts.keyPoolLow ? 'border-health-warning/50' : ''}`}>
+      {alerts.keyPoolLow && (
+        <div className="absolute top-0 right-0 w-32 h-32 bg-health-warning/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+      )}
+      
+      <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-2">
+        <Key size={16} className="text-qkd" /> QKD Key Pool
+      </h2>
+      
+      <div className="flex-1 flex flex-col items-center justify-center relative min-h-0">
+        <div className="w-full h-full max-h-[220px]">
+          <KeyPoolGauge 
+            available={key_pool.available} 
+            max={key_pool.capacity || 20} 
           />
         </div>
-        <p className="text-xs text-slate-500 mt-2">
-          Generation rate: {data?.generation_rate ?? 6} keys/min
-        </p>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-dark-700/50">
+        <div>
+          <div className="text-[10px] text-slate-400 uppercase">Availability a(t)</div>
+          <div className="text-base font-mono text-qkd mt-1">
+            {key_pool.availability_ratio != null ? `${(key_pool.availability_ratio * 100).toFixed(0)}%` : '100%'}
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] text-slate-400 uppercase">Gen Rate</div>
+          <div className="text-base font-mono text-white mt-1">{key_pool.generation_rate.toFixed(1)} <span className="text-[10px] text-slate-500">/m</span></div>
+        </div>
+        <div>
+          <div className="text-[10px] text-slate-400 uppercase">Consumed</div>
+          <div className="text-base font-mono text-white mt-1">{key_pool.consumed}</div>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default KeyPoolPanel;

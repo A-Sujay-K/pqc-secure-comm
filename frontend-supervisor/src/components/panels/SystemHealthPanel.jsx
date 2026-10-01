@@ -1,29 +1,37 @@
 import React from 'react';
-import MetricCard from '../common/MetricCard';
-import { Activity } from 'lucide-react';
+import { useDashboardState } from '../../hooks/useDashboardState';
+import StatusIndicator from '../common/StatusIndicator';
 
-function formatUptime(seconds) {
-  if (!seconds) return '—';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  return `${h}h ${m}m ${s}s`;
-}
+const SystemHealthPanel = () => {
+  const { isConnected, snapshot } = useDashboardState();
 
-export default function SystemHealthPanel({ uptime, connections }) {
+  const getStatus = (condition) => condition ? 'good' : 'critical';
+
   return (
-    <div className="space-y-4">
-      <MetricCard
-        title="Active Connections"
-        value={connections ?? 0}
-        subtitle="WebSocket chat sessions"
-        icon={Activity}
-        color="sky"
-      />
-      <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-4">
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">System Uptime</p>
-        <p className="text-2xl font-bold text-slate-100">{formatUptime(uptime)}</p>
+    <div className="flex flex-col h-full justify-between">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-3 bg-dark-800 rounded border border-dark-700">
+          <span className="text-sm text-slate-300 font-mono">Telemetry WSS</span>
+          <StatusIndicator status={getStatus(isConnected)} />
+        </div>
+        
+        <div className="flex items-center justify-between p-3 bg-dark-800 rounded border border-dark-700">
+          <span className="text-sm text-slate-300 font-mono">Active Conn.</span>
+          <span className="font-mono text-white font-bold">{snapshot?.active_connections || 0}</span>
+        </div>
+        
+        <div className="flex items-center justify-between p-3 bg-dark-800 rounded border border-dark-700">
+          <span className="text-sm text-slate-300 font-mono">Backend API</span>
+          <StatusIndicator status={getStatus(snapshot !== null)} />
+        </div>
+      </div>
+      
+      <div className="mt-4 p-4 rounded bg-dark-900 border border-dark-700 text-center">
+        <div className="text-xs text-slate-500 uppercase tracking-widest mb-1">Supervisor Status</div>
+        <div className="text-health-good font-mono text-sm animate-pulse">NOMINAL</div>
       </div>
     </div>
   );
-}
+};
+
+export default SystemHealthPanel;
