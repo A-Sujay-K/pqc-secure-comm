@@ -1,40 +1,61 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { createTelemetryConnection } from '../services/ws';
+import { fetchTelemetrySnapshot } from '../services/api';
 
-const TelemetryContext = createContext(null);
+export const TelemetryContext = createContext(null);
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
-
-export function TelemetryProvider({ children }) {
+export const TelemetryProvider = ({ children }) => {
   const [snapshot, setSnapshot] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [events, setEvents] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef(null);
 
-  useEffect(() => {
-    const connect = () => {
-      const ws = new WebSocket(`${WS_URL}/ws/telemetry`);
-      wsRef.current = ws;
+  const handleMessage = useCallback((payload, timestamp) => {
+    if (!payload || typeof payload !== 'object' || !payload.key_pool) return;
+    const payloadWithTime = { ...payload, timestamp };
+    
+    setSnapshot(payloadWithTime);
+    
+    setHistory((prev) => {
+      const newHistory = [...prev, payloadWithTime];
+      if (newHistory.length > 60) return newHistory.slice(newHistory.length - 60);
+      return newHistory;
+    });
 
-      ws.onopen = () => setIsConnected(true);
-      ws.onmessage = (e) => {
-        try {
-          setSnapshot(JSON.parse(e.data));
-        } catch {}
-      };
-      ws.onclose = () => {
-        setIsConnected(false);
-        setTimeout(connect, 3000);
-      };
-    };
-
-    connect();
-    return () => wsRef.current?.close();
+    if (payload.recent_events && Array.isArray(payload.recent_events) && payload.recent_events.length > 0) {
+      setEvents((prev) => {
+        const newEvents = [...payload.recent_events, ...prev];
+        return newEvents.slice(0, 100);
+      });
+    }
   }, []);
 
+  useEffect(() => {
+    // Initial fetch
+    fetchTelemetrySnapshot().then(data => {
+      if (data && typeof data === 'object' && data.key_pool) {
+        setSnapshot(prev => prev || data);
+        if (Array.isArray(data.recent_events)) setEvents(data.recent_events);
+      }
+    }).catch(err => console.error('Failed initial fetch:', err));
+
+    const connection = createTelemetryConnection(handleMessage, setIsConnected);
+
+    return () => {
+      connection.disconnect();
+    };
+  }, [handleMessage]);
+
+  const value = {
+    snapshot,
+    history,
+    events,
+    isConnected,
+  };
+
   return (
-    <TelemetryContext.Provider value={{ snapshot, isConnected }}>
+    <TelemetryContext.Provider value={value}>
       {children}
     </TelemetryContext.Provider>
   );
-}
-
-export const useTelemetry = () => useContext(TelemetryContext);
+};

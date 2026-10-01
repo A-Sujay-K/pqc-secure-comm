@@ -1,33 +1,28 @@
 import React from 'react';
 
-export default function MetricCard({ title, value, subtitle, icon: Icon, color = 'indigo', trend }) {
-  const COLOR_MAP = {
-    indigo: 'text-indigo-400 bg-indigo-400/10',
-    emerald: 'text-emerald-400 bg-emerald-400/10',
-    yellow: 'text-yellow-400 bg-yellow-400/10',
-    red: 'text-red-400 bg-red-400/10',
-    sky: 'text-sky-400 bg-sky-400/10',
-  };
-
+const MetricCard = ({ title, value, icon: Icon, trend, trendUp, colorClass = "text-white" }) => {
   return (
-    <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 shadow-xl">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{title}</p>
-          <p className="text-3xl font-bold text-slate-100 mt-1">{value ?? '—'}</p>
+    <div className="glass-panel-glow p-5 flex flex-col justify-between h-full group relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-bl-full -mr-4 -mt-4 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+      
+      <div className="flex items-center gap-3 mb-2">
+        {Icon && <Icon size={18} className="text-slate-400" />}
+        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">{title}</h3>
+      </div>
+      
+      <div className="flex items-end justify-between mt-auto">
+        <div className={`text-4xl font-mono font-bold ${colorClass}`}>
+          {value}
         </div>
-        {Icon && (
-          <div className={`p-2.5 rounded-xl ${COLOR_MAP[color] || COLOR_MAP.indigo}`}>
-            <Icon size={20} className={COLOR_MAP[color]?.split(' ')[0]} />
+        
+        {trend && (
+          <div className={`text-xs flex items-center font-mono ${trendUp ? 'text-health-good' : 'text-health-critical'}`}>
+            {trendUp ? '▲' : '▼'} {trend}
           </div>
         )}
       </div>
-      {subtitle && <p className="text-sm text-slate-400">{subtitle}</p>}
-      {trend !== undefined && (
-        <p className={`text-xs mt-2 font-medium ${trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-          {trend >= 0 ? '+' : ''}{trend}% from last snapshot
-        </p>
-      )}
     </div>
   );
-}
+};
+
+export default MetricCard;
