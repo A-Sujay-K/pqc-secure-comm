@@ -1,78 +1,69 @@
-# PQC Secure Comm — Installation & Deployment Guide
+# Adaptive Hybrid Post-Quantum Secure Communication System
+
+This is a production-grade hybrid post-quantum secure chat application. It features a User Chat Interface, a real-time Supervisor Telemetry Dashboard, and a dual-lane cryptographic backend.
 
 ## Prerequisites
-- Python 3.11+
-- Node.js 18+
-- Docker & Docker Compose v2
-- MongoDB 6+
-- Redis 7+
-- liboqs (optional — falls back to simulated PQC if not installed)
+1. **Node.js** (v18 or higher)
+2. **Python** (3.11 or higher)
+3. **Docker Desktop** (Make sure Docker is running)
 
-## Environment Setup
+## Setup Instructions
 
-### 1. Clone the Repository
+### 1. Start the Infrastructure (MongoDB & Redis)
+Open a terminal in the root folder and run:
 ```bash
-git clone https://github.com/A-Sujay-K/pqc-secure-comm.git
-cd pqc-secure-comm
+docker compose up -d
 ```
+*This starts MongoDB on port 27018 and Redis on port 6380.*
 
-### 2. Backend Configuration
+### 2. Setup the Backend
+Open a terminal in the `backend` folder and run:
 ```bash
-cd backend
-cp .env.example .env
-# Required settings to update:
-# - JWT_SECRET (use a strong random value)
-# - MONGODB_URI (if using external MongoDB)
-# - REDIS_URI (if using external Redis)
+# Create a virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Docker Deployment (Recommended)
+### 3. Seed the Database with Demo Users
+With your virtual environment still active, go back to the root folder and run:
 ```bash
-# Start all services
-docker-compose up --build -d
-
-# View logs
-docker-compose logs -f backend
+python infra/scripts/seed_users.py
 ```
+*This will create the accounts: `alice`, `bob`, `charlie`, `diana`, and `eve`. Password for all is `password123`.*
 
-### 4. Local Development
+### 4. Start the Backend Server
+In the `backend` folder, with the virtual environment active, run:
 ```bash
-# Terminal 1: Backend
-cd backend && uvicorn app.main:app --reload --port 8000
-
-# Terminal 2: User frontend
-cd frontend-user && npm install && npm run dev
-
-# Terminal 3: Supervisor frontend
-cd frontend-supervisor && npm install && npm run dev
+uvicorn app.main:app --reload
 ```
+*The backend will now be running on http://localhost:8000*
 
-## Service URLs
-| Service            | URL                   |
-|--------------------|-----------------------|
-| API                | http://localhost:8000 |
-| API Docs (Swagger) | http://localhost:8000/docs |
-| Chat App           | http://localhost:5173 |
-| Supervisor         | http://localhost:5174 |
-
-## Running Tests
+### 5. Start the User Chat Frontend
+Open a new terminal in the `frontend-user` folder and run:
 ```bash
-cd backend
-pytest tests/ -v --asyncio-mode=auto
+npm install
+npm run dev
 ```
+*The chat app will be available at http://localhost:5173*
 
-## Architecture Notes
-
-### Threat Level Routing
-Every outgoing message is evaluated by the `Q_TL` heuristic:
+### 6. Start the Supervisor Dashboard
+Open a new terminal in the `frontend-supervisor` folder and run:
+```bash
+npm install
+npm run dev
 ```
-Q_TL = (w1 * S + w2 * I) / (w3 * A_K)
-```
-- If `Q_TL >= 0.7`: routed to **Critical Lane** (QKD key + AES-256-GCM)
-- If `Q_TL < 0.7`: routed to **Standard Lane** (Kyber-768 + Dilithium-3 + AES-256-GCM)
-- If `A_K == 0`: buffered in Redis priority queue, client notified with 'Securing connection...'
+*The dashboard will be available at http://localhost:5174*
 
-### QKD Daemon
-A background asyncio task generates one simulated 256-bit key every 10 seconds,
-storing it in Redis (for fast access) and MongoDB (for auditability).
+## Testing the QKD Hybrid System
+1. Open the Chat App and log in as `alice` (Password: `password123`).
+2. Type normal messages, and you will see them encrypted via **Standard Lane (Kyber-768 / Dilithium)**.
+3. Toggle the **High Security** button, OR type the word `"password"`, and you will see the system instantly route your message through the **Critical QKD Lane**, pulling a simulated quantum key from the live daemon!
+4. Watch the Supervisor Dashboard to see the real-time routing metrics and QKD pool depths.
