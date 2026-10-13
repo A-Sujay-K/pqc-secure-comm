@@ -9,8 +9,24 @@ _db: Optional[AsyncIOMotorDatabase] = None
 async def init_mongodb(uri: str, db_name: str):
     global _client, _db
     logger.info("Initializing MongoDB connection...")
-    _client = AsyncIOMotorClient(uri)
+    
+    clean_uri = uri.strip().strip('"').strip("'")
+    _client = AsyncIOMotorClient(clean_uri)
     _db = _client[db_name]
+    
+    # Verify connectivity and authentication with ping
+    try:
+        await _client.admin.command('ping')
+        logger.info("MongoDB connection and authentication verified.")
+    except Exception as e:
+        logger.error(f"MongoDB authentication / connection check failed: {e}")
+        logger.error(
+            "Please check MONGODB_URI in Render environment variables:\n"
+            "1. Did you replace '<password>' with your actual password (and remove the angle brackets)?\n"
+            "2. Ensure the Database User exists in Atlas under Security -> Database Access with Read/Write permissions.\n"
+            "3. If your password has special characters (@, #, :), URL-encode them or use an alphanumeric password."
+        )
+        raise
     
     # Create indexes
     try:
