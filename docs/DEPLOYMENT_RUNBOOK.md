@@ -110,7 +110,7 @@ Add the following key-value pairs under the **Environment Variables** tab:
 | :--- | :--- | :--- |
 | `MONGODB_URI` | `mongodb+srv://pqc_prod_user:DVHt72lg2nCcnSuo@cluster0.tf6kl4m.mongodb.net/pqc_secure_comm?retryWrites=true&w=majority` | Connection to Atlas M0 cluster |
 | `MONGODB_DB_NAME` | `pqc_secure_comm` | Database name for collections |
-| `REDIS_URI` | `rediss://default:...@...upstash.io:6379` | TLS Upstash connection string |
+| `REDIS_URI` | `rediss://default:gQAAAAAAAzOOAAIgcDJkNGViOTI3NTVjNmY0NjdhYWI3N2QzYjkyMGY2OTUyNw@special-sunbird-209806.upstash.io:6379` | TLS Upstash connection string |
 | `JWT_SECRET` | `pqc_prod_sec_789f2a938c1b489d27a19c540938f` | 32-byte production HMAC secret |
 | `JWT_ALGORITHM` | `HS256` | Cryptographic JWT signing algorithm |
 | `JWT_EXPIRY_MINUTES` | `60` | Token lifetime |
