@@ -78,7 +78,11 @@ const ThreatFeedCard = () => {
               const p = evt.payload || {};
               const isCritical = p.lane === 'critical' || (p.threat_score != null && p.threat_score >= (policyConfig?.threshold ?? 0.70));
               const sender = p.sender_id || p.sender || 'alice';
-              const displayTime = new Date(evt.timestamp).toLocaleTimeString([], {
+              let normalizedTs = evt.timestamp;
+              if (typeof normalizedTs === 'string' && !normalizedTs.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(normalizedTs)) {
+                normalizedTs = normalizedTs + 'Z';
+              }
+              const displayTime = new Date(normalizedTs).toLocaleTimeString([], {
                 hour12: false,
                 hour: '2-digit',
                 minute: '2-digit',

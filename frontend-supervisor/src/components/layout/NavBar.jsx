@@ -48,6 +48,18 @@ const NavBar = () => {
 
   const tabs = ['Dashboard', 'Analytics', 'Infrastructure', 'Harvest Lab'];
 
+  const getHomeUrl = () => {
+    const envUrl = import.meta.env.VITE_HOME_URL;
+    const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    if (isLocal) {
+      return envUrl || 'http://localhost:5173';
+    }
+    if (envUrl && !envUrl.includes('localhost')) {
+      return envUrl;
+    }
+    return 'https://pqc-secure-comm.vercel.app';
+  };
+
   const handleTabClick = (tab) => {
     if (tab === 'Harvest Lab') {
       setIsHarvestLabOpen(true);
@@ -199,19 +211,19 @@ const NavBar = () => {
 
                 {/* Actions */}
                 <div className="space-y-1 text-xs font-sans">
-                  {/* Exit to Chat App */}
+                  {/* Exit to Home Page */}
                   <button
                     type="button"
                     onClick={() => {
                       setIsAdminMenuOpen(false);
-                      window.location.href = 'http://localhost:5173/chat';
+                      window.location.href = getHomeUrl();
                     }}
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] transition-colors cursor-pointer group"
                   >
                     <ExternalLink size={14} className="text-[var(--text-tertiary)] group-hover:text-[var(--col-standard)] transition-colors shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs text-[var(--text-primary)]">Exit to Chat App</p>
-                      <p className="text-[10px] text-[var(--text-tertiary)]">Open end-user messaging client</p>
+                      <p className="font-medium text-xs text-[var(--text-primary)]">Exit to Home Page</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Return to main application</p>
                     </div>
                   </button>
 
@@ -225,14 +237,14 @@ const NavBar = () => {
                         localStorage.removeItem('pqc_user');
                         sessionStorage.clear();
                       } catch(e) {}
-                      window.location.href = 'http://localhost:5173/login';
+                      window.location.href = getHomeUrl();
                     }}
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left text-[var(--col-danger,#ef4444)] hover:bg-[var(--col-danger)]/10 transition-colors cursor-pointer group"
                   >
                     <LogOut size={14} className="text-[var(--col-danger,#ef4444)] transition-colors shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-xs text-[var(--col-danger,#ef4444)]">Logout &amp; Terminate Session</p>
-                      <p className="text-[10px] text-[var(--text-tertiary)]">Sign out of administrator console</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">Sign out and return to home page</p>
                     </div>
                   </button>
                 </div>

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import { createTelemetryConnection } from '../services/ws';
-import { fetchTelemetrySnapshot } from '../services/api';
+import { fetchTelemetrySnapshot, fetchRecentEvents } from '../services/api';
 
 export const TelemetryContext = createContext(null);
 
@@ -46,23 +46,28 @@ export const TelemetryProvider = ({ children }) => {
 
   const refetchSnapshot = useCallback(async () => {
     try {
-      const data = await fetchTelemetrySnapshot();
+      const [data, eventsData] = await Promise.all([
+        fetchTelemetrySnapshot().catch((err) => {
+          console.error('Failed to fetch snapshot:', err);
+          return null;
+        }),
+        fetchRecentEvents(50).catch((err) => {
+          console.error('Failed to fetch events:', err);
+          return null;
+        })
+      ]);
+
       if (data && typeof data === 'object' && data.key_pool) {
         setSnapshot(data);
-        if (Array.isArray(data.recent_events)) {
-          setEvents((prev) => {
-            const combined = [...data.recent_events, ...prev];
-            const seen = new Set();
-            return combined.filter((e) => {
-              const id = e.event_id || e._id || `${e.timestamp}-${e.payload?.message_id}`;
-              if (seen.has(id)) return false;
-              seen.add(id);
-              return true;
-            }).slice(0, 100);
-          });
-        }
-        return data;
       }
+
+      if (Array.isArray(eventsData) && eventsData.length > 0) {
+        setEvents(eventsData);
+      } else if (data?.recent_events && Array.isArray(data.recent_events)) {
+        setEvents(data.recent_events);
+      }
+
+      return data;
     } catch (err) {
       console.error('Failed to refetch telemetry snapshot:', err);
     }

@@ -66,6 +66,7 @@ async def process_message(content: str, filename: str | None, file_data: bytes |
     metadata = {
         "threat_score": threat_score,
         "lane": lane,
+        "sender_id": sender_id,
         "available_keys_at_time": available_keys,
         "dynamic_threshold": dynamic_threshold,
         "sender_priority": sender_priority,

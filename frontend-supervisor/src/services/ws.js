@@ -54,13 +54,21 @@ export class TelemetryWebSocket {
 
 export const createTelemetryConnection = (onMessage, onStatusChange) => {
   const wsBase = import.meta.env.VITE_WS_URL;
+  const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   let url;
-  if (wsBase) {
-    const cleanBase = wsBase.replace(/\/+$/, '');
-    url = `${cleanBase}/telemetry`;
+  if (wsBase && (!wsBase.includes('localhost') || isLocal)) {
+    let cleanBase = wsBase.trim().replace(/\/+$/, '');
+    if (cleanBase.startsWith('http://')) {
+      cleanBase = 'ws://' + cleanBase.slice(7);
+    } else if (cleanBase.startsWith('https://')) {
+      cleanBase = 'wss://' + cleanBase.slice(8);
+    }
+    const baseWithWs = cleanBase.endsWith('/ws') ? cleanBase : `${cleanBase}/ws`;
+    url = `${baseWithWs}/telemetry`;
+  } else if (isLocal) {
+    url = 'ws://localhost:8000/ws/telemetry';
   } else {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    url = `${protocol}//${window.location.host}/ws/telemetry`;
+    url = 'wss://pqc-secure-comm-backend.onrender.com/ws/telemetry';
   }
   const connection = new TelemetryWebSocket(url, onMessage, onStatusChange);
   connection.connect();

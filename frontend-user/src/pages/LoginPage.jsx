@@ -68,9 +68,12 @@ export const LoginPage = () => {
     });
   };
 
-  const supervisorUrl = window.location.port === '5173'
+  const defaultSupervisorUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
     ? 'http://localhost:5174'
-    : '/supervisor';
+    : 'https://pqc-supervisor-dashboard.vercel.app';
+  const supervisorUrl = (import.meta.env.VITE_SUPERVISOR_URL && !import.meta.env.VITE_SUPERVISOR_URL.includes('localhost'))
+    ? import.meta.env.VITE_SUPERVISOR_URL
+    : defaultSupervisorUrl;
 
   const displayName = formatDisplayName(savedUser || formData.username);
 

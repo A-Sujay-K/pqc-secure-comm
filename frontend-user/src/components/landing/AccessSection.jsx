@@ -26,7 +26,9 @@ export default function AccessSection() {
   const defaultSupervisorUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
     ? 'http://localhost:5174'
     : 'https://pqc-supervisor-dashboard.vercel.app';
-  const supervisorUrl = import.meta.env.VITE_SUPERVISOR_URL || defaultSupervisorUrl;
+  const supervisorUrl = (import.meta.env.VITE_SUPERVISOR_URL && !import.meta.env.VITE_SUPERVISOR_URL.includes('localhost'))
+    ? import.meta.env.VITE_SUPERVISOR_URL
+    : defaultSupervisorUrl;
 
   // Check prefers-reduced-motion
   const prefersReducedMotion = typeof window !== 'undefined'

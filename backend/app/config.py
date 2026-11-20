@@ -28,7 +28,13 @@ class Settings(BaseSettings):
     S_CRIT: float = 0.85
     DELIVERY_DEADLINE: float = 5.0
     MAX_FILE_SIZE_MB: int = 25
-    CORS_ORIGINS: Union[list[str], str] = ["http://localhost:5173", "http://localhost:5174"]
+    CORS_ORIGINS: Union[list[str], str] = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://pqc-secure-comm.vercel.app",
+        "https://pqc-supervisor-dashboard.vercel.app",
+        "*"
+    ]
     LOG_LEVEL: str = "INFO"
 
     @field_validator("CORS_ORIGINS", mode="before")

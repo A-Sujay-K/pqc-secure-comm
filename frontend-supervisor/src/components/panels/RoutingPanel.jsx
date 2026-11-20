@@ -95,11 +95,15 @@ const RoutingPanel = ({ filterLane }) => {
           </div>
         ) : (
           routingEvents.map((evt, idx) => {
-            const p = evt.payload;
+            const p = evt.payload || {};
             const isCritical = p.lane === 'critical';
-            const threatScore = p.threat_score != null ? p.threat_score.toFixed(2) : '0.00';
+            const threatScore = p.threat_score != null ? Number(p.threat_score).toFixed(2) : '0.00';
             const isHighThreat = p.threat_score >= 0.70;
-            const displayTime = new Date(evt.timestamp).toLocaleTimeString([], {
+            let normalizedTs = evt.timestamp;
+            if (typeof normalizedTs === 'string' && !normalizedTs.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(normalizedTs)) {
+              normalizedTs = normalizedTs + 'Z';
+            }
+            const displayTime = new Date(normalizedTs).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',
