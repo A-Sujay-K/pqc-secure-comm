@@ -8,10 +8,9 @@ import { useChat } from '../hooks/useChat';
 import { Lock, Shield, ShieldAlert, UserPlus } from 'lucide-react';
 
 const ChatPage = () => {
-  const { activeChat, securityBanner, addContact } = useChat();
+  const { activeChat, setActiveChat, securityBanner, addContact } = useChat();
   // highSecurityMode: false = Standard lane, true = Critical lane
   const [highSecurityMode, setHighSecurityMode] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleToggleSecurity = (target) => {
     if (typeof target === 'boolean') {
@@ -33,10 +32,7 @@ const ChatPage = () => {
   const isUnverifiedSender = activeChat && activeChat.is_contact === false;
 
   return (
-    <AppShell 
-      mobileMenuOpen={mobileMenuOpen} 
-      setMobileMenuOpen={setMobileMenuOpen}
-    >
+    <AppShell>
       {activeChat ? (
         <div className="flex flex-col h-full w-full relative overflow-hidden">
           {securityBanner && (
@@ -49,7 +45,7 @@ const ChatPage = () => {
             contact={activeChat} 
             highSecurityMode={highSecurityMode}
             onToggleSecurity={handleToggleSecurity}
-            onToggleMobileMenu={() => setMobileMenuOpen(prev => !prev)}
+            onBack={() => setActiveChat(null)}
           />
 
           {/* Liquid Glass Security Alert Banner for Unverified Senders (fixed above scroll container) */}
@@ -96,7 +92,7 @@ const ChatPage = () => {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center p-6 text-center select-none">
+        <div className="hidden md:flex flex-1 items-center justify-center p-6 text-center select-none">
           <div className="max-w-sm animate-enter">
             <div className="w-16 h-16 rounded-2xl bg-[var(--surface-inner)] border border-[var(--edge-rest)] flex items-center justify-center mx-auto mb-4">
               <Lock className="w-7 h-7 text-[var(--text-tertiary)]" />

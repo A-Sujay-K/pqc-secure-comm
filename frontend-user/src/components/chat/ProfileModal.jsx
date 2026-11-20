@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, Trash2, Shield, User, Mail, Check } from 'lucide-react';
+import { X, Camera, Trash2, Shield, User, Mail, Check, LogOut } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import AvatarCropModal from '../common/AvatarCropModal';
 import { uploadAvatar, deleteAvatar } from '../../services/api';
+import { useAuth } from '../../hooks/useAuth';
 
 /**
  * ProfileModal
@@ -10,6 +11,7 @@ import { uploadAvatar, deleteAvatar } from '../../services/api';
  * square crop with circular preview, and photo removal.
  */
 export default function ProfileModal({ isOpen, onClose, user, onUserUpdated }) {
+  const { logout } = useAuth();
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -170,11 +172,22 @@ export default function ProfileModal({ isOpen, onClose, user, onUserUpdated }) {
           </div>
 
           {/* Footer */}
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                logout();
+              }}
+              className="px-3.5 py-2 rounded-[12px] text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+            >
+              <LogOut size={13} />
+              <span>Sign Out</span>
+            </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-[12px] btn-primary text-xs font-medium cursor-pointer"
+              className="px-5 py-2 rounded-[12px] btn-primary text-xs font-medium cursor-pointer active:scale-95"
             >
               Done
             </button>
