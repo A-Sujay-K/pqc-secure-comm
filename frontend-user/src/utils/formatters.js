@@ -1,12 +1,45 @@
+export const getFileUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  const apiEnv = import.meta.env.VITE_API_URL || '';
+  let origin = '';
+  if (apiEnv.startsWith('http://') || apiEnv.startsWith('https://')) {
+    try {
+      const parsed = new URL(apiEnv);
+      origin = parsed.origin;
+    } catch {
+      origin = apiEnv.replace(/\/api\/v1\/?$/, '');
+    }
+  } else {
+    origin = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+      ? 'http://localhost:8000'
+      : 'https://pqc-secure-comm-backend.onrender.com';
+  }
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${origin}${cleanPath}`;
+};
+
 export const formatTime = (dateStr) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  let normalized = dateStr;
+  if (typeof normalized === 'string' && !normalized.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
+    normalized = normalized + 'Z';
+  }
+  const date = new Date(normalized);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 export const formatDate = (dateStr) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
+  let normalized = dateStr;
+  if (typeof normalized === 'string' && !normalized.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
+    normalized = normalized + 'Z';
+  }
+  const date = new Date(normalized);
+  if (isNaN(date.getTime())) return '';
   const now = new Date();
   const diffTime = Math.abs(now - date);
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));

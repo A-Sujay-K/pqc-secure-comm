@@ -115,12 +115,12 @@ const MessageInput = ({ highSecurityMode }) => {
 
       {/* Floating pill composer inside the conversation pane */}
       <div 
-        className={`flex items-center gap-2 p-1.5 pl-3 sm:pl-4 rounded-full border bg-[var(--surface-inner)]/80 backdrop-blur-md transition-all ${
+        className={`flex items-center gap-2 p-1.5 pl-3 sm:pl-4 rounded-full border bg-[var(--glass-l2-bg)] backdrop-blur-2xl shadow-[inset_0_1px_0_var(--border-highlight),0_8px_24px_var(--shadow-color)] transition-all ${
           isLocked
             ? 'border-amber-500/30 bg-[var(--surface-inner)]/40 opacity-75'
             : (highSecurityMode 
-                ? 'border-[var(--col-critical)]/35 focus-within:border-[var(--col-critical)]/60' 
-                : 'border-[var(--edge-rest)] focus-within:border-[var(--edge-hover)]')
+                ? 'border-[var(--col-critical)]/40 focus-within:border-[var(--col-critical)]/70 focus-within:shadow-[inset_0_1px_0_var(--border-highlight),0_0_0_2px_rgba(245,158,11,0.2)]' 
+                : 'border-[var(--edge-rest)] hover:border-[var(--edge-hover)] focus-within:border-[var(--col-standard)]/50 focus-within:shadow-[inset_0_1px_0_var(--border-highlight),0_0_0_2px_rgba(94,234,212,0.15)]')
         }`}
       >
         {/* Hidden File Input */}

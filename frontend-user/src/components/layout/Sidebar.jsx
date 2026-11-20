@@ -17,6 +17,10 @@ const Sidebar = ({ onContactSelect }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
 
+  useEffect(() => {
+    if (user) setCurrentUser(user);
+  }, [user]);
+
   // Debounced search for registered users when >= 3 chars
   useEffect(() => {
     const q = search.trim();
@@ -80,7 +84,7 @@ const Sidebar = ({ onContactSelect }) => {
   return (
     <div className="h-full flex flex-col select-none">
       {/* Current User Profile Bar + Theme Toggle + Logout */}
-      <div className="p-4 flex items-center justify-between border-b border-[var(--edge-rest)]">
+      <div className="p-4 flex items-center justify-between border-b border-[var(--edge-rest)] bg-[var(--surface-inner)]/30 backdrop-blur-xl shadow-[inset_0_1px_0_var(--border-highlight)]">
         <div 
           onClick={() => setIsProfileOpen(true)}
           className="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-85 transition-opacity group"

@@ -11,7 +11,7 @@ async def init_mongodb(uri: str, db_name: str):
     logger.info("Initializing MongoDB connection...")
     
     clean_uri = uri.strip().strip('"').strip("'")
-    _client = AsyncIOMotorClient(clean_uri)
+    _client = AsyncIOMotorClient(clean_uri, tz_aware=True)
     _db = _client[db_name]
     
     # Verify connectivity and authentication with ping

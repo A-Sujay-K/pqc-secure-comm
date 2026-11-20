@@ -128,4 +128,6 @@ if ws_telemetry_router:
 # Static file serving for uploads
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
 os.makedirs(uploads_dir, exist_ok=True)
+os.makedirs(os.path.join(uploads_dir, "avatars"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+app.mount("/api/v1/uploads", StaticFiles(directory=uploads_dir), name="api_uploads")

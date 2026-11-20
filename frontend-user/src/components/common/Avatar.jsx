@@ -1,5 +1,5 @@
-import React from 'react';
-import { getInitials } from '../../utils/formatters';
+import React, { useState, useEffect } from 'react';
+import { getInitials, getFileUrl } from '../../utils/formatters';
 import { useTheme } from '../../theme/ThemeProvider';
 
 /**
@@ -33,9 +33,13 @@ function nameHash(name = '') {
 const Avatar = ({ name, isOnline = false, size = 'md', avatarUrl = null, src = null }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
-  const [imgError, setImgError] = React.useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const effectiveAvatar = src || avatarUrl;
+
+  useEffect(() => {
+    setImgError(false);
+  }, [effectiveAvatar]);
 
   const sizeClasses = {
     sm: 'w-7 h-7 text-[11px]',
@@ -52,10 +56,7 @@ const Avatar = ({ name, isOnline = false, size = 'md', avatarUrl = null, src = n
   const tints = isDark ? MUTED_TINTS_DARK : MUTED_TINTS_LIGHT;
   const tint = tints[nameHash(name) % tints.length];
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const fullAvatarSrc = effectiveAvatar
-    ? (effectiveAvatar.startsWith('http') || effectiveAvatar.startsWith('data:') ? effectiveAvatar : `${apiUrl}${effectiveAvatar}`)
-    : null;
+  const fullAvatarSrc = getFileUrl(effectiveAvatar);
 
   return (
     <div className="relative inline-flex shrink-0">

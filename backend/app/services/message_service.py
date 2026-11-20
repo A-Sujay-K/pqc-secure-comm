@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from app.models.message import COLLECTION as MESSAGES_COL
 
 async def save_message(db, message_doc: dict) -> str:
@@ -27,6 +28,13 @@ async def get_message_history(db, user_id: str, peer_id: str, page: int = 1, per
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         doc["id"] = doc["_id"]  # Add id alias for frontend compatibility
+        created_at_val = doc.get("created_at")
+        if isinstance(created_at_val, datetime):
+            if created_at_val.tzinfo is None:
+                created_at_val = created_at_val.replace(tzinfo=timezone.utc)
+            doc["created_at"] = created_at_val.isoformat()
+        elif isinstance(created_at_val, str) and not created_at_val.endswith("Z") and "+" not in created_at_val:
+            doc["created_at"] = f"{created_at_val}Z"
         messages.append(doc)
         
     total_count = await db[MESSAGES_COL].count_documents(query)

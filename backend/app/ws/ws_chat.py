@@ -1,6 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from loguru import logger
 import json
+from datetime import datetime, timezone
 from app.ws.connection_manager import manager
 from app.utils.security import decode_jwt_token
 from app.db.mongodb import get_database
@@ -199,6 +200,16 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                         }) is not None
 
                         # Deliver to recipient
+                        created_at_dt = message_doc.get("created_at")
+                        if isinstance(created_at_dt, datetime):
+                            if created_at_dt.tzinfo is None:
+                                created_at_dt = created_at_dt.replace(tzinfo=timezone.utc)
+                            created_at_iso = created_at_dt.isoformat()
+                        elif isinstance(created_at_dt, str):
+                            created_at_iso = created_at_dt if (created_at_dt.endswith("Z") or "+" in created_at_dt) else f"{created_at_dt}Z"
+                        else:
+                            created_at_iso = datetime.now(timezone.utc).isoformat()
+
                         recipient_payload = {
                             "type": "chat_message",
                             "payload": {
@@ -213,7 +224,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                                 "threat_score": routing_result["threat_score"],
                                 "is_read": False,
                                 "is_contact": is_contact_for_recipient,
-                                "created_at": message_doc["created_at"].isoformat(),
+                                "created_at": created_at_iso,
                             }
                         }
                         await manager.send_to_user(recipient_id, recipient_payload)
@@ -233,7 +244,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                                 "threat_score": routing_result["threat_score"],
                                 "is_read": False,
                                 "is_contact": True,
-                                "created_at": message_doc["created_at"].isoformat(),
+                                "created_at": created_at_iso,
                             }
                         }
                         await manager.send_to_user(user_id, sender_payload)
@@ -248,9 +259,6 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                                 "threat_score": routing_result["threat_score"],
                             }
                         })
-                        
-                        # Also send the message back to sender for their own chat view
-                        await manager.send_to_user(user_id, outgoing)
                         
                 elif msg_type in ("typing_start", "typing_stop"):
                     recipient_id = msg_data.get("recipient_id")

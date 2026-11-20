@@ -60,11 +60,27 @@ export const ChatProvider = ({ children }) => {
 
     const unsubs = [
       wsManager.on(WS_EVENTS.CHAT_MESSAGE, (payload) => {
-        const peerId = payload.sender_id === user.id ? payload.recipient_id : payload.sender_id;
+        const peerId = payload.sender_id === user?.id ? payload.recipient_id : payload.sender_id;
         setMessages(prev => {
           const next = new Map(prev);
           const chatMsgs = next.get(peerId) || [];
-          // Avoid duplicates
+
+          // If message is from current user, replace the matching optimistic temporary message
+          if (payload.sender_id === user?.id) {
+            const tempIdx = chatMsgs.findIndex(m => 
+              typeof m.id === 'string' && m.id.startsWith('temp-') && 
+              m.content === payload.content && 
+              (!m.file_name || m.file_name === payload.file_name)
+            );
+            if (tempIdx !== -1) {
+              const updatedList = [...chatMsgs];
+              updatedList[tempIdx] = payload;
+              next.set(peerId, updatedList);
+              return next;
+            }
+          }
+
+          // Avoid duplicate messages
           if (!chatMsgs.find(m => m.id === payload.id)) {
             next.set(peerId, [...chatMsgs, payload]);
           }
@@ -80,7 +96,7 @@ export const ChatProvider = ({ children }) => {
           return prev;
         });
         
-        if (activeChat?.id !== peerId && payload.sender_id !== user.id) {
+        if (activeChat?.id !== peerId && payload.sender_id !== user?.id) {
           setUnreadCounts(prev => ({
             ...prev,
             [peerId]: (prev[peerId] || 0) + 1
@@ -123,7 +139,32 @@ export const ChatProvider = ({ children }) => {
 
   const sendMessage = (recipientId, content, file = null, isHighSecurity = false) => {
     if (!content && !file) return;
-    
+
+    // Instant optimistic client-side message so sender immediately sees their message
+    const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const optimisticMsg = {
+      id: optimisticId,
+      sender_id: user?.id,
+      recipient_id: recipientId,
+      content: content || '',
+      file_name: file?.name || null,
+      file_url: file?.data ? `data:${file.type || 'application/octet-stream'};base64,${file.data}` : null,
+      file_size: file?.size || null,
+      encryption_lane: isHighSecurity ? 'critical' : 'standard',
+      threat_score: 0.1,
+      is_read: false,
+      is_contact: true,
+      created_at: new Date().toISOString(),
+      status: 'sending'
+    };
+
+    setMessages(prev => {
+      const next = new Map(prev);
+      const chatMsgs = next.get(recipientId) || [];
+      next.set(recipientId, [...chatMsgs, optimisticMsg]);
+      return next;
+    });
+
     wsManager.send(WS_EVENTS.CHAT_MESSAGE, {
       recipient_id: recipientId,
       content,

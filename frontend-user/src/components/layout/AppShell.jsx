@@ -13,18 +13,18 @@ const AppShell = ({ children }) => {
   const { activeChat } = useChat();
 
   return (
-    <div className="h-[100dvh] w-screen p-0 sm:p-3 md:p-6 overflow-hidden flex items-center justify-center relative select-none">
-      {/* visionOS style single floating L1 glass window */}
+    <div className="h-[100dvh] w-screen p-1 sm:p-3 md:p-6 overflow-hidden flex items-center justify-center relative select-none">
+      {/* visionOS style single floating L1 liquid glass window */}
       <GlassLayer 
         level="l1" 
-        className="w-full h-full max-w-[1600px] flex overflow-hidden rounded-none sm:rounded-[24px] md:rounded-[28px] border-0 sm:border border-[var(--edge-rest)] shadow-none sm:shadow-[0_24px_64px_var(--shadow-color)] relative"
+        className="w-full h-full max-w-[1600px] flex overflow-hidden rounded-[20px] sm:rounded-[24px] md:rounded-[28px] border border-[var(--edge-rest)] shadow-[0_16px_48px_var(--shadow-color),inset_0_1px_0_var(--border-highlight)] relative backdrop-blur-2xl"
       >
         {/* Contacts Pane (Sidebar) — On mobile: visible full-width when no chat is active; on desktop: always visible fixed width */}
         <div 
           className={`
             ${activeChat ? 'hidden md:flex' : 'flex'}
             w-full md:w-80 lg:w-96 flex-shrink-0 h-full flex-col
-            border-r-0 md:border-r border-[var(--edge-rest)] bg-[var(--glass-l2-bg)] backdrop-blur-xl
+            border-r-0 md:border-r border-[var(--edge-rest)] bg-[var(--glass-l2-bg)] backdrop-blur-2xl
           `}
         >
           <Sidebar />

@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime, timezone
 from loguru import logger
 from app.utils.constants import PRIORITY_QUEUE_KEY
 from app.config import get_settings
@@ -179,7 +180,11 @@ async def release_queued_messages(redis_client, db, key_pool_service, crypto_eng
                     "encryption_lane": "critical",
                     "threat_score": message_data.get("threat_score", message_data.get("qtl", 0.8)),
                     "is_read": False,
-                    "created_at": message_doc["created_at"].isoformat()
+                    "created_at": (
+                        message_doc["created_at"].replace(tzinfo=timezone.utc).isoformat()
+                        if isinstance(message_doc.get("created_at"), datetime) and message_doc["created_at"].tzinfo is None
+                        else (message_doc["created_at"].isoformat() if isinstance(message_doc.get("created_at"), datetime) else datetime.now(timezone.utc).isoformat())
+                    )
                 }
             }
             

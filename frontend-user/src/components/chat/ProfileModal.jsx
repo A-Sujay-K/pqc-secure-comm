@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
  * square crop with circular preview, and photo removal.
  */
 export default function ProfileModal({ isOpen, onClose, user, onUserUpdated }) {
-  const { logout } = useAuth();
+  const { logout, updateUser } = useAuth();
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -38,6 +38,9 @@ export default function ProfileModal({ isOpen, onClose, user, onUserUpdated }) {
     setLoading(true);
     try {
       const res = await uploadAvatar(croppedBlob);
+      if (updateUser) {
+        updateUser({ avatar_url: res.avatar_url });
+      }
       if (onUserUpdated) {
         onUserUpdated({ ...user, avatar_url: res.avatar_url });
       }
@@ -54,6 +57,9 @@ export default function ProfileModal({ isOpen, onClose, user, onUserUpdated }) {
     setLoading(true);
     try {
       await deleteAvatar();
+      if (updateUser) {
+        updateUser({ avatar_url: null });
+      }
       if (onUserUpdated) {
         onUserUpdated({ ...user, avatar_url: null });
       }

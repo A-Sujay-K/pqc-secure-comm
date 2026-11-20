@@ -27,7 +27,7 @@ const ChatHeader = ({
   const status = contactStatus || (contact?.status ? contact.status : 'Online');
 
   return (
-    <div className="h-16 px-2.5 sm:px-6 border-b border-[var(--edge-rest)] flex items-center justify-between shrink-0 select-none relative z-20 gap-1.5 sm:gap-2">
+    <div className="h-16 px-2.5 sm:px-6 border-b border-[var(--edge-rest)] bg-[var(--glass-l2-bg)] backdrop-blur-2xl flex items-center justify-between shrink-0 select-none relative z-20 gap-1.5 sm:gap-2 shadow-[inset_0_1px_0_var(--border-highlight)]">
       {/* Contact identity + Mobile Back Button */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
         {onBack && (

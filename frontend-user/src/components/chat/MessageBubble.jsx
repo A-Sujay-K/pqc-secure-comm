@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { formatTime } from '../../utils/formatters';
+import { formatTime, getFileUrl } from '../../utils/formatters';
 import { Check, CheckCheck, FileText, Download, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { ENCRYPTION_LANES } from '../../utils/constants';
 import MessageSealPopover from './MessageSealPopover';
@@ -91,10 +91,11 @@ const MessageBubble = ({ message, isOwn, hasTail = true }) => {
                 </p>
                 {message.file_url && (
                   <a 
-                    href={message.file_url} 
+                    href={getFileUrl(message.file_url)} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-[11px] text-[var(--col-standard)] hover:underline inline-flex items-center gap-1 mt-0.5 font-medium"
+                    download={message.file_name || true}
+                    className="text-[11px] text-[var(--col-standard)] hover:underline inline-flex items-center gap-1 mt-0.5 font-medium cursor-pointer"
                   >
                     <Download size={10} /> Download
                   </a>

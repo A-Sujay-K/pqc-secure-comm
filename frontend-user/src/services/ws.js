@@ -21,12 +21,30 @@ class WebSocketManager {
     const wsBase = import.meta.env.VITE_WS_URL;
     let wsUrl;
     if (wsBase) {
-      const cleanBase = wsBase.replace(/\/+$/, '');
-      wsUrl = `${cleanBase}/chat/${token}`;
+      let cleanBase = wsBase.trim().replace(/\/+$/, '');
+      if (cleanBase.startsWith('http://')) {
+        cleanBase = 'ws://' + cleanBase.slice(7);
+      } else if (cleanBase.startsWith('https://')) {
+        cleanBase = 'wss://' + cleanBase.slice(8);
+      }
+      const baseWithWs = cleanBase.endsWith('/ws') ? cleanBase : `${cleanBase}/ws`;
+      wsUrl = `${baseWithWs}/chat/${token}`;
     } else {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      wsUrl = `${protocol}//${host}/ws/chat/${token}`;
+      const apiBase = import.meta.env.VITE_API_URL;
+      if (apiBase && (apiBase.startsWith('http://') || apiBase.startsWith('https://'))) {
+        try {
+          const parsed = new URL(apiBase);
+          const proto = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+          wsUrl = `${proto}//${parsed.host}/ws/chat/${token}`;
+        } catch {
+          const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          wsUrl = `${proto}//pqc-secure-comm-backend.onrender.com/ws/chat/${token}`;
+        }
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        wsUrl = `${protocol}//${host}/ws/chat/${token}`;
+      }
     }
     
     this.ws = new WebSocket(wsUrl);
@@ -90,11 +108,27 @@ class WebSocketManager {
     }
   }
 
+  isConnected() {
+    return this.ws && this.ws.readyState === WebSocket.OPEN;
+  }
+
   send(type, payload) {
+    const raw = JSON.stringify({ type, ...payload });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type, ...payload }));
+      this.ws.send(raw);
+      return true;
+    } else if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+      console.warn('WebSocket is connecting, queuing message...');
+      this.ws.addEventListener('open', () => {
+        this.ws.send(raw);
+      }, { once: true });
+      return true;
     } else {
-      console.warn('Cannot send message, WebSocket is not open');
+      console.warn('Cannot send message, WebSocket is not open. State:', this.ws?.readyState);
+      if (this.token && (!this.ws || this.ws.readyState === WebSocket.CLOSED)) {
+        this.connect(this.token);
+      }
+      return false;
     }
   }
 

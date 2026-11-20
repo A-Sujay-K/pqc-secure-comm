@@ -35,7 +35,11 @@ const ChatWindow = () => {
 
   // Group by date logic
   const groupedMessages = chatMessages.reduce((acc, msg) => {
-    const date = new Date(msg.created_at).toLocaleDateString([], { 
+    let normalized = msg.created_at;
+    if (typeof normalized === 'string' && !normalized.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
+      normalized = normalized + 'Z';
+    }
+    const date = new Date(normalized).toLocaleDateString([], { 
       month: 'short', 
       day: 'numeric', 
       year: 'numeric' 
