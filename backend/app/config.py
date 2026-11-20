@@ -1,13 +1,19 @@
 import json
 from functools import lru_cache
 from typing import Union
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    MONGODB_URI: str = "mongodb://pqc_user:pqc_pass@localhost:27017/pqc_secure_comm?authSource=admin"
+    MONGODB_URI: str = Field(
+        default="mongodb://pqc_user:pqc_pass@localhost:27017/pqc_secure_comm?authSource=admin",
+        validation_alias=AliasChoices("MONGODB_URI", "MONGODB_URL")
+    )
     MONGODB_DB_NAME: str = "pqc_secure_comm"
-    REDIS_URI: str = "redis://localhost:6379/0"
+    REDIS_URI: str = Field(
+        default="redis://localhost:6379/0",
+        validation_alias=AliasChoices("REDIS_URI", "REDIS_URL")
+    )
     JWT_SECRET: str = "change-me-to-a-random-secret-key-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRY_MINUTES: int = 60
