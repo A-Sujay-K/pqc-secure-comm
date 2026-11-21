@@ -65,78 +65,46 @@ const ThreatHeatmap = ({ data = [], threshold = 0.70 }) => {
   const lineStroke = isDark ? '#f0e8dc' : '#2a2018';
   const critColor = isDark ? '#f59e0b' : '#b45309';
 
-  // Enhance data with smooth spline points for fluid curved wave visualization
+  // Strictly sort real telemetry events chronologically without synthetic wave data
   const chartPoints = useMemo(() => {
-    let sorted = data && data.length > 0 ? [...data].sort((a, b) => a.time - b.time) : [];
-
-    if (sorted.length === 0) {
-      const now = Date.now();
-      const count = 10;
-      const intervalMs = 15000;
-      for (let i = count - 1; i >= 0; i--) {
-        const t = now - i * intervalMs;
-        const s = 0.22 + 0.08 * Math.sin((t / 20000) * Math.PI) + 0.04 * Math.cos((t / 8000) * Math.PI);
-        const score = Math.max(0.12, Math.min(0.38, Number(s.toFixed(2))));
-        sorted.push({
-          time: t,
-          displayTime: new Date(t).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          score,
-          lane: 'standard',
-          baseline: 0.18 + 0.04 * Math.sin(t / 1500),
-        });
-      }
-      return sorted;
+    if (!data || data.length === 0) return [];
+    
+    const sorted = [...data].sort((a, b) => a.time - b.time);
+    
+    // If only 1 real event exists, duplicate it slightly to draw a baseline span
+    if (sorted.length === 1) {
+      const p = sorted[0];
+      return [
+        { ...p, id: `${p.id}-pre`, time: p.time - 5000, displayTime: p.displayTime, isAnchor: true },
+        p,
+        { ...p, id: `${p.id}-post`, time: p.time + 5000, displayTime: p.displayTime, isAnchor: true }
+      ];
     }
 
-    // If only 1-4 points exist, interpolate cosine curves between points for fluid continuous spline
-    if (sorted.length < 5) {
-      const result = [];
-      for (let i = 0; i < sorted.length; i++) {
-        result.push(sorted[i]);
-        if (i < sorted.length - 1) {
-          const curr = sorted[i];
-          const next = sorted[i + 1];
-          const dt = next.time - curr.time;
-          const steps = 4;
-          for (let step = 1; step < steps; step++) {
-            const frac = step / steps;
-            const t = curr.time + dt * frac;
-            // Cosine easing for smooth curve transition
-            const ease = 0.5 * (1 - Math.cos(Math.PI * frac));
-            const score = curr.score + (next.score - curr.score) * ease;
-            const displayTime = new Date(t).toLocaleTimeString([], {
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            });
-            result.push({
-              time: t,
-              displayTime,
-              score,
-              lane: score >= threshold ? 'critical' : 'standard',
-              isInterpolated: true,
-              baseline: 0.18 + 0.04 * Math.sin(t / 1500),
-            });
-          }
-        }
-      }
-      return result;
-    }
+    return sorted;
+  }, [data]);
 
-    return sorted.map((p) => ({
-      ...p,
-      baseline: 0.18 + 0.04 * Math.sin(p.time / 1500),
-    }));
-  }, [data, threshold]);
+  const isEmpty = !chartPoints || chartPoints.length === 0;
 
   return (
-    <div className="w-full h-full select-none">
+    <div className="w-full h-full select-none relative">
+      {isEmpty && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 text-center px-4">
+          <p className="text-xs text-[var(--text-tertiary)] font-sans">
+            Awaiting Traffic Telemetry
+          </p>
+          <span className="text-[10px] font-mono text-[var(--col-critical)] mt-0.5 opacity-80">
+            Threshold: {threshold.toFixed(2)}
+          </span>
+        </div>
+      )}
+
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartPoints} margin={{ top: 12, right: 12, left: -22, bottom: 6 }}>
           <defs>
             <linearGradient id="threatAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={lineStroke} stopOpacity={0.06} />
+              <stop offset="0%" stopColor={critColor} stopOpacity={0.12} />
+              <stop offset="60%" stopColor={lineStroke} stopOpacity={0.04} />
               <stop offset="100%" stopColor={lineStroke} stopOpacity={0.0} />
             </linearGradient>
           </defs>
@@ -150,7 +118,7 @@ const ThreatHeatmap = ({ data = [], threshold = 0.70 }) => {
             fontFamily="var(--font-mono, monospace)"
             tickLine={false}
             axisLine={{ stroke: axisLineStroke }}
-            minTickGap={30}
+            minTickGap={25}
           />
 
           <YAxis
@@ -163,14 +131,14 @@ const ThreatHeatmap = ({ data = [], threshold = 0.70 }) => {
             axisLine={{ stroke: axisLineStroke }}
           />
 
-          <Tooltip content={<CustomTooltip />} />
+          {!isEmpty && <Tooltip content={<CustomTooltip />} />}
 
-          {/* Reference Line at 0.70 threshold in critical amber */}
+          {/* Reference Line at threshold in critical amber */}
           <ReferenceLine
             y={threshold}
             stroke={critColor}
             strokeDasharray="4 3"
-            strokeWidth={1}
+            strokeWidth={1.2}
             label={{
               position: 'insideTopRight',
               value: `Threshold ${threshold.toFixed(2)}`,
@@ -180,43 +148,39 @@ const ThreatHeatmap = ({ data = [], threshold = 0.70 }) => {
             }}
           />
 
-          {/* Secondary quiet baseline curve matching Finlo Reference B */}
-          <Line
-            type="natural"
-            dataKey="baseline"
-            stroke={axisTextFill}
-            strokeWidth={1}
-            strokeDasharray="3 3"
-            dot={false}
-            isAnimationActive={false}
-          />
-
-          {/* Primary Natural Curved Spline Line (Reference B style) */}
-          <Area
-            type="natural"
-            dataKey="score"
-            stroke={lineStroke}
-            strokeWidth={2}
-            fill="url(#threatAreaGrad)"
-            isAnimationActive={false}
-            dot={(props) => {
-              const { cx, cy, payload, index } = props;
-              if (payload && !payload.isInterpolated && (payload.score >= threshold || payload.lane === 'critical')) {
+          {/* Genuine Monotone Curved Spline on Real Telemetry Data Only */}
+          {!isEmpty && (
+            <Area
+              type="monotone"
+              dataKey="score"
+              stroke={lineStroke}
+              strokeWidth={2}
+              fill="url(#threatAreaGrad)"
+              isAnimationActive={false}
+              dot={(props) => {
+                const { cx, cy, payload, index } = props;
+                if (!payload || payload.isAnchor) return null;
+                const isCrit = payload.score >= threshold || payload.lane === 'critical';
                 return (
                   <circle
                     key={`dot-${index}`}
                     cx={cx}
                     cy={cy}
-                    r={3.5}
-                    fill={critColor}
+                    r={isCrit ? 4.5 : 3.5}
+                    fill={isCrit ? critColor : (isDark ? '#5eead4' : '#0d9488')}
                     stroke={isDark ? '#1a1410' : '#f0e8dc'}
                     strokeWidth={1.5}
                   />
                 );
-              }
-              return null;
-            }}
-          />
+              }}
+              activeDot={{
+                r: 5.5,
+                stroke: critColor,
+                strokeWidth: 2,
+                fill: isDark ? '#f0e8dc' : '#2a2018',
+              }}
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>

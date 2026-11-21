@@ -53,6 +53,34 @@ export const useDashboardState = () => {
     const safeAvailable = Math.min(key_pool.available != null ? key_pool.available : 0, qkdCapacity);
     const availabilityFraction = safeAvailable / qkdCapacity;
 
+    // Pure real telemetry threat score data filtered strictly to genuine routing_decision events
+    const rawThreatData = (events || [])
+      .filter(e => e.event_type === 'routing_decision' && e.payload && e.payload.threat_score != null)
+      .map(e => {
+        const rawTime = e.timestamp ? (e.timestamp.endsWith('Z') ? e.timestamp : `${e.timestamp}Z`) : new Date().toISOString();
+        const dateObj = new Date(rawTime);
+        const time = dateObj.getTime();
+        const displayTime = dateObj.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const score = Number(Math.min(Math.max(Number(e.payload.threat_score) || 0, 0), 1.0).toFixed(3));
+        const lane = e.payload.lane || (score >= (policyConfig?.threshold ?? 0.70) ? 'critical' : 'standard');
+        return {
+          id: e._id || `${time}-${score}`,
+          time,
+          displayTime,
+          score,
+          lane,
+          isRealEvent: true,
+        };
+      })
+      .sort((a, b) => a.time - b.time);
+
+    // Calculate genuine mathematical average threat score
+    const computedAvgThreat = routing.avg_threat_score != null
+      ? Math.min(routing.avg_threat_score, 1.0).toFixed(2)
+      : rawThreatData.length > 0
+        ? (rawThreatData.reduce((acc, p) => acc + p.score, 0) / rawThreatData.length).toFixed(2)
+        : '0.00';
+
     const kpi = {
       keyPoolAvailable: safeAvailable,
       keyPoolCapacity: qkdCapacity,
@@ -68,7 +96,7 @@ export const useDashboardState = () => {
       queueDepth: queue.depth || 0,
       deadlineSeconds: queue.deadline_seconds || 5.0,
       oldestEntrySeconds: queue.oldest_entry_age_seconds || 0,
-      avgThreatScore: routing.avg_threat_score != null ? Math.min(routing.avg_threat_score, 1.0).toFixed(2) : '0.22',
+      avgThreatScore: computedAvgThreat,
       activeConnections: active_connections,
       uptime: uptime_seconds,
       genRate: key_pool.generation_rate != null ? key_pool.generation_rate.toFixed(1) : '0.0',
@@ -84,37 +112,6 @@ export const useDashboardState = () => {
         queueDepth: point.queue?.depth || 0,
       };
     });
-
-    let rawThreatData = (events || [])
-      .filter(e => e.event_type === 'routing_decision' || (e.payload && e.payload.threat_score != null))
-      .map(e => ({
-        time: new Date(e.timestamp).getTime(),
-        displayTime: new Date(e.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        score: Math.min(Math.max(e.payload?.threat_score || 0, 0), 1.0),
-        lane: e.payload?.lane || (e.payload?.threat_score >= 0.70 ? 'critical' : 'standard'),
-        isRealEvent: true,
-      }));
-
-    // Ensure baseline wave exists so chart renders an authentic natural curved spline (Reference B style)
-    if (rawThreatData.length < 8) {
-      const now = Date.now();
-      const syntheticBase = [];
-      const count = 8;
-      const intervalMs = 20000;
-      for (let i = count - 1; i >= 0; i--) {
-        const t = now - (i + 1) * intervalMs;
-        const s = 0.22 + 0.07 * Math.sin((t / 25000) * Math.PI) + 0.04 * Math.cos((t / 11000) * Math.PI);
-        const score = Math.max(0.12, Math.min(0.36, Number(s.toFixed(2))));
-        syntheticBase.push({
-          time: t,
-          displayTime: new Date(t).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          score,
-          lane: 'standard',
-          isSynthetic: true,
-        });
-      }
-      rawThreatData = [...syntheticBase, ...rawThreatData].sort((a, b) => a.time - b.time);
-    }
 
     const chartData = {
       timeSeries: timeSeriesData,

@@ -9,12 +9,13 @@ import { ShieldAlert } from 'lucide-react';
  * Line Chart 1 of Row 2: Threat Score Timeline smooth spline.
  */
 const ThreatScorePanel = () => {
-  const { isReady, kpi, chartData, alerts } = useDashboardState();
+  const { isReady, kpi, chartData, alerts, policyConfig } = useDashboardState();
 
   if (!isReady || !kpi) return null;
 
+  const currentThreshold = Number(policyConfig?.threshold) || 0.70;
   const avgScore = parseFloat(kpi.avgThreatScore) || 0.0;
-  const isHighThreat = avgScore >= 0.70;
+  const isHighThreat = avgScore >= currentThreshold;
 
   return (
     <div
@@ -55,7 +56,7 @@ const ThreatScorePanel = () => {
 
       {/* Smooth Spline Timeline Chart */}
       <div className="flex-1 min-h-[160px] -ml-2 -mb-1">
-        <ThreatHeatmap data={chartData?.threatScatter || []} threshold={0.70} />
+        <ThreatHeatmap data={chartData?.threatScatter || []} threshold={currentThreshold} />
       </div>
 
       {/* Footer Policy Strip */}
@@ -63,14 +64,14 @@ const ThreatScorePanel = () => {
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--col-standard)]" />
-            <span>&lt; 0.70 Standard</span>
+            <span>&lt; {currentThreshold.toFixed(2)} Standard</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--col-critical)]" />
-            <span>≥ 0.70 Critical</span>
+            <span>≥ {currentThreshold.toFixed(2)} Critical</span>
           </span>
         </div>
-        <span className="hidden sm:inline text-[var(--text-tertiary)] text-[11px]">Threshold locked at 0.70</span>
+        <span className="hidden sm:inline text-[var(--text-tertiary)] text-[11px]">Threshold {currentThreshold.toFixed(2)}</span>
       </div>
     </div>
   );

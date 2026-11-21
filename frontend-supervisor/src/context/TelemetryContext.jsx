@@ -46,13 +46,17 @@ export const TelemetryProvider = ({ children }) => {
 
   const refetchSnapshot = useCallback(async () => {
     try {
-      const [data, eventsData] = await Promise.all([
+      const [data, eventsData, routingEvents] = await Promise.all([
         fetchTelemetrySnapshot().catch((err) => {
           console.error('Failed to fetch snapshot:', err);
           return null;
         }),
         fetchRecentEvents(50).catch((err) => {
           console.error('Failed to fetch events:', err);
+          return null;
+        }),
+        fetchRecentEvents(50, 'routing_decision').catch((err) => {
+          console.error('Failed to fetch routing events:', err);
           return null;
         })
       ]);
@@ -61,10 +65,25 @@ export const TelemetryProvider = ({ children }) => {
         setSnapshot(data);
       }
 
-      if (Array.isArray(eventsData) && eventsData.length > 0) {
-        setEvents(eventsData);
-      } else if (data?.recent_events && Array.isArray(data.recent_events)) {
-        setEvents(data.recent_events);
+      // Merge and deduplicate events by _id so routing decisions are preserved alongside live feed
+      const mergedMap = new Map();
+      const allLists = [
+        ...(Array.isArray(eventsData) ? eventsData : []),
+        ...(Array.isArray(routingEvents) ? routingEvents : []),
+        ...(data?.recent_events && Array.isArray(data.recent_events) ? data.recent_events : [])
+      ];
+
+      allLists.forEach((ev) => {
+        if (ev && ev._id) {
+          mergedMap.set(ev._id, ev);
+        }
+      });
+
+      if (mergedMap.size > 0) {
+        const sortedEvents = Array.from(mergedMap.values()).sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        setEvents(sortedEvents.slice(0, 100));
       }
 
       return data;
