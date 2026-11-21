@@ -6,7 +6,13 @@ _redis: Optional[redis.Redis] = None
 
 def _sanitize_redis_uri(uri: str) -> str:
     """Sanitize and validate Redis URI to prevent common scheme/format errors."""
+    if not uri:
+        return ""
+    import re
     cleaned = uri.strip().strip('"').strip("'")
+    
+    # Strip any accidental environment variable name prefix (e.g., REDIS_URL=... or REDIS_URI=...)
+    cleaned = re.sub(r'^(?:REDIS_URL|REDIS_URI)\s*=\s*', '', cleaned, flags=re.IGNORECASE).strip().strip('"').strip("'")
     
     # Check if user mistakenly pasted Upstash REST HTTPS URL
     if cleaned.startswith("https://") or cleaned.startswith("http://"):
@@ -15,6 +21,11 @@ def _sanitize_redis_uri(uri: str) -> str:
             "Please use the standard Redis connection string: rediss://default:<password>@<endpoint>:6379"
         )
         cleaned = cleaned.replace("https://", "rediss://").replace("http://", "redis://")
+
+    # If scheme is redis:// but host is upstash.io, upgrade to rediss:// (TLS is required by Upstash)
+    if cleaned.startswith("redis://") and "upstash.io" in cleaned:
+        cleaned = "rediss://" + cleaned[8:]
+        logger.info("Upgraded Upstash Redis scheme from redis:// to rediss:// (TLS required).")
 
     # If scheme is missing entirely, auto-detect
     if not (cleaned.startswith("redis://") or cleaned.startswith("rediss://") or cleaned.startswith("unix://")):

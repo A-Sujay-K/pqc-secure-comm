@@ -10,7 +10,9 @@ async def init_mongodb(uri: str, db_name: str):
     global _client, _db
     logger.info("Initializing MongoDB connection...")
     
+    import re
     clean_uri = uri.strip().strip('"').strip("'")
+    clean_uri = re.sub(r'^(?:MONGODB_URI|MONGODB_URL)\s*=\s*', '', clean_uri, flags=re.IGNORECASE).strip().strip('"').strip("'")
     _client = AsyncIOMotorClient(clean_uri, tz_aware=True)
     _db = _client[db_name]
     

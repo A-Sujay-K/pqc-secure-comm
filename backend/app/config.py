@@ -37,6 +37,24 @@ class Settings(BaseSettings):
     ]
     LOG_LEVEL: str = "INFO"
 
+    @field_validator("MONGODB_URI", mode="before")
+    @classmethod
+    def sanitize_mongodb_uri(cls, v):
+        if isinstance(v, str):
+            import re
+            v = v.strip().strip('"').strip("'")
+            v = re.sub(r'^(?:MONGODB_URI|MONGODB_URL)\s*=\s*', '', v, flags=re.IGNORECASE).strip().strip('"').strip("'")
+        return v
+
+    @field_validator("REDIS_URI", mode="before")
+    @classmethod
+    def sanitize_redis_uri(cls, v):
+        if isinstance(v, str):
+            import re
+            v = v.strip().strip('"').strip("'")
+            v = re.sub(r'^(?:REDIS_URI|REDIS_URL)\s*=\s*', '', v, flags=re.IGNORECASE).strip().strip('"').strip("'")
+        return v
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):
