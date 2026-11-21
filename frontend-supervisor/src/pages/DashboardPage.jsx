@@ -222,6 +222,9 @@ const DashboardPage = () => {
                   ML-KEM-768
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-[var(--surface-inner)] border border-[var(--edge-rest)]">
+                  BB84 QKD
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-[var(--surface-inner)] border border-[var(--edge-rest)]">
                   ML-DSA-65
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-[var(--surface-inner)] border border-[var(--edge-rest)]">

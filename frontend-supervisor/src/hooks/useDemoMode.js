@@ -6,7 +6,7 @@ const DEMO_MESSAGES = [
   { high_security: false, content: '[Demo 3/10] Routine traffic nominal (Threat Score: 0.18 < 0.70)' },
   { high_security: false, content: '[Demo 4/10] Preparing adaptive route for elevated security payload' },
   { high_security: true,  content: '⚠ [Demo 5/10] THREAT SPIKE DETECTED (Q_TL > 0.70) — Activating Critical Lane' },
-  { high_security: true,  content: '⚠ [Demo 6/10] Simulated QKD-256 + ML-KEM-768 hybrid key derived via HKDF' },
+  { high_security: true,  content: '⚠ [Demo 6/10] BB84 QKD-256 + ML-KEM-768 hybrid key derived via HKDF' },
   { high_security: true,  content: '⚠ [Demo 7/10] Critical payload transmitted under information-theoretic protection' },
   { high_security: false, content: '[Demo 8/10] Threat subsided — hybrid switch returning to Standard Lane' },
   { high_security: false, content: '[Demo 9/10] Standard Lane restored — NIST FIPS 203 encapsulation nominal' },
@@ -118,7 +118,7 @@ export const useDemoMode = () => {
         setCurrentLane(item.high_security ? 'critical' : 'standard');
         setStatusMessage(
           item.high_security
-            ? `Routing Message ${i + 1}/10: CRITICAL LANE (QKD-Sim)`
+            ? `Routing Message ${i + 1}/10: CRITICAL LANE (BB84 QKD + ML-KEM)`
             : `Routing Message ${i + 1}/10: STANDARD LANE (ML-KEM)`
         );
 

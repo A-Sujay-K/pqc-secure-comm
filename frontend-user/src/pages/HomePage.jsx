@@ -168,19 +168,19 @@ export default function HomePage() {
               <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--col-critical)] mr-2.5 align-middle opacity-90 group-hover:scale-125 transition-transform" />
               <ScrambleText
                 text="QKD — QUANTUM KEY DISTRIBUTION"
-                hoverText="256-BIT ONE-TIME KEYS · SIMULATED OTP"
+                hoverText="BB84 PROTOCOL · 256-BIT ONE-TIME PAD ENTROPY"
                 delay={700}
                 duration={500}
                 className="hover:text-[var(--col-critical)] transition-colors"
               />
             </div>
 
-            {/* Line 4: Dynamic Switching (Stagger 3) - Hover reveals: A NEW STANDARD FOR DIGITAL SECURITY. */}
+            {/* Line 4: Dynamic Switching (Stagger 3) - Hover reveals: ML-KEM-768 + BB84 QKD DUAL-LAYER SECURITY */}
             <div className="text-xs sm:text-sm md:text-base lg:text-lg tracking-wide uppercase font-mono-light pl-6 sm:pl-12 md:pl-16 lg:pl-20 text-[var(--text-primary)] group cursor-pointer">
               <span className="text-[var(--text-tertiary)] mr-2">/</span>
               <ScrambleText
-                text="HYBRIDE SWITCHING"
-                hoverText="A NEW STANDARD FOR DIGITAL SECURITY."
+                text="HYBRID SWITCHING"
+                hoverText="ML-KEM-768 + BB84 QKD DUAL-LAYER SECURITY"
                 delay={950}
                 duration={500}
                 className="hover:text-[var(--text-primary)] underline decoration-[var(--edge-rest)] hover:decoration-[var(--col-standard)] transition-colors inline-block"

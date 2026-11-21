@@ -5,7 +5,7 @@
  * Zero garbage-collection allocations per frame:
  * - 280 particles on desktop, 120 on mobile
  * - Multi-stage graph progression: ring -> plate1 -> plate2 -> plate3 -> column convergence -> exit
- * - Simulated QKD key pulse moving upward along column
+ * - BB84 QKD key pulse moving upward along column
  * - Ring flash triggers on packet transit
  * - Wave-function collapse on key 'M' / measure event
  */
@@ -34,7 +34,7 @@ export class ParticleSystem {
     this.particles = [];
     this.initPool();
 
-    // QKD Simulated Key upward pulses along central column
+    // BB84 QKD Key upward pulses along central column
     this.qkdPulses = [
       { y: 780, speed: 180, active: true, progress: 0 },
       { y: 780, speed: 160, active: false, delay: 1.8 }
@@ -172,7 +172,7 @@ export class ParticleSystem {
       }
     });
 
-    // 3. Upward Simulated QKD Pulses along central column
+    // 3. Upward BB84 QKD Pulses along central column
     this.qkdPulses.forEach(q => {
       if (q.active) {
         q.y -= q.speed * dt;

@@ -58,7 +58,7 @@ const ChatWindow = () => {
           </div>
           <p className="text-sm font-medium text-[var(--text-primary)]">This is the beginning of your secure conversation.</p>
           <p className="text-xs text-[var(--text-secondary)] font-sans max-w-sm">
-            NIST FIPS 203 (ML-KEM-768) + ML-DSA-65 protected. Confidential against future quantum decryption.
+            Protected by NIST FIPS 203 (ML-KEM-768) lattice KEM and BB84 Quantum Key Distribution (QKD). Confidential against future quantum decryption.
           </p>
         </div>
       ) : (

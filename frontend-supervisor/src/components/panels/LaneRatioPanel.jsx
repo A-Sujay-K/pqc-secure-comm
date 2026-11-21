@@ -25,7 +25,7 @@ const LaneRatioPanel = () => {
             <GitCommit size={13} strokeWidth={1.8} />
           </div>
           <h2 className="text-[15px] font-medium text-[var(--text-primary)]">
-            PQC Lane Ratio
+            Lane Ratio (ML-KEM vs BB84 QKD)
           </h2>
         </div>
       </div>
@@ -34,11 +34,11 @@ const LaneRatioPanel = () => {
       <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)] mb-2 shrink-0">
         <span className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--col-standard)]" />
-          <span>{stdPct.toFixed(1)}% Standard</span>
+          <span>{stdPct.toFixed(1)}% ML-KEM</span>
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--col-critical)]" />
-          <span>{critPct.toFixed(1)}% Critical</span>
+          <span>{critPct.toFixed(1)}% BB84 QKD</span>
         </span>
       </div>
 
@@ -65,14 +65,14 @@ const LaneRatioPanel = () => {
         </div>
 
         <div className="flex flex-col min-w-0">
-          <span className="text-[11px] text-[var(--text-secondary)] truncate">Standard lane</span>
+          <span className="text-[11px] text-[var(--text-secondary)] truncate">Standard ML-KEM</span>
           <div className="mt-0.5">
             <NumeralDisplay value={stdPct} unit="%" decimals={1} size="sm" />
           </div>
         </div>
 
         <div className="flex flex-col min-w-0">
-          <span className="text-[11px] text-[var(--text-secondary)] truncate">Critical QKD</span>
+          <span className="text-[11px] text-[var(--text-secondary)] truncate">Critical BB84 QKD</span>
           <div className="mt-0.5">
             <NumeralDisplay value={critPct} unit="%" decimals={1} size="sm" />
           </div>

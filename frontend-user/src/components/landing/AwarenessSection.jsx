@@ -69,7 +69,7 @@ export default function AwarenessSection() {
               <strong className="text-[var(--text-primary)] font-medium">Post-Quantum Cryptography:</strong> NIST-standardized module-lattice algorithms (FIPS 203 ML-KEM and FIPS 204 ML-DSA) provide proven resistance against both classical and quantum adversaries.
             </p>
             <p className="text-justify font-sans">
-              <strong className="text-[var(--text-primary)] font-medium">Hybrid Defense:</strong> Combining post-quantum lattice shared secrets with simulated QKD one-time key material via HKDF enforces dual-layer defense-in-depth: an attacker must break both independent mechanisms.
+              <strong className="text-[var(--text-primary)] font-medium">Hybrid Defense:</strong> Combining NIST FIPS 203 ML-KEM-768 post-quantum lattice shared secrets with BB84 Quantum Key Distribution (QKD) one-time entropy via HKDF enforces dual-layer defense-in-depth: an attacker must break both independent quantum and mathematical mechanisms.
             </p>
             <p className="text-justify font-sans">
               <strong className="text-[var(--text-primary)] font-medium">Autonomous Switching:</strong> Real-time threat arbitration computes a quantum risk score (<em className="font-mono">Q_TL</em>) per payload, instantly routing high-sensitivity traffic into isolated Critical lanes.
@@ -114,7 +114,7 @@ export default function AwarenessSection() {
                 {isDeciphered ? 'IMMUNE: ▓▒░▓▒░▓▒░▓▒░▓▒░' : 'CIPHER: ▓▒░▓▒░▓▒░▓▒░▓▒░'}
               </span>
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--col-standard)]/15 text-[var(--col-standard)]">
-                LATTICE + QKD SECURE
+                ML-KEM + BB84 QKD SECURE
               </span>
             </div>
           </div>

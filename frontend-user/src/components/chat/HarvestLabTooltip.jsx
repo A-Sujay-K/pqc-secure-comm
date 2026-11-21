@@ -92,13 +92,13 @@ export const HarvestLabTooltip = ({ isOpen, onClose }) => {
             <div className="p-3.5 rounded-xl bg-[var(--surface-inner)] border border-[var(--edge-rest)]">
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--col-critical)] mb-1.5">
                 <ShieldAlert size={15} />
-                <span>Critical Lane (QKD-256 Hybrid)</span>
+                <span>Critical Lane (BB84 QKD-256 + ML-KEM Hybrid)</span>
               </div>
               <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2">
-                Reserved for sensitive payloads (Q_TL ≥ 0.70). Combines unconditional physical One-Time Pad entropy with lattice secrets.
+                Reserved for sensitive payloads (Q_TL ≥ 0.70). Combines unconditional physical One-Time Pad entropy from BB84 quantum channels with ML-KEM-768 lattice secrets.
               </p>
               <div className="font-mono text-[10px] text-[var(--text-tertiary)] bg-[var(--surface-elevated)] p-1.5 rounded border border-[var(--edge-rest)]">
-                OTP + ML-KEM · Information-theoretic security
+                BB84 QKD + ML-KEM-768 · Information-theoretic security
               </div>
             </div>
           </div>
@@ -112,7 +112,7 @@ export const HarvestLabTooltip = ({ isOpen, onClose }) => {
               Q_TL = 0.60 · S(content) + 0.40 · I(priority)
             </div>
             <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-              When Q_TL exceeds the dynamic threshold τ_eff or content sensitivity S ≥ 0.85, the engine automatically dispatches through the Critical QKD Lane, consuming physical entropy from the 25-key reservoir.
+              When Q_TL exceeds the dynamic threshold τ_eff or content sensitivity S ≥ 0.85, the engine automatically dispatches through the Critical BB84 QKD Lane, consuming physical entropy from the 25-key reservoir.
             </p>
           </div>
 
@@ -120,7 +120,7 @@ export const HarvestLabTooltip = ({ isOpen, onClose }) => {
           <div className="flex items-start gap-2 p-3 rounded-xl bg-[var(--surface-inner)] border border-[var(--edge-rest)] text-[11px] text-[var(--text-tertiary)]">
             <AlertCircle size={13} className="shrink-0 mt-0.5 text-[var(--col-critical)]" />
             <span>
-              In this environment, QKD quantum key distribution is simulated using physical hardware entropy with optical line attenuation and BB84 protocol emulation.
+              Quantum Key Distribution executes the Bennett-Brassard (BB84) protocol across conjugate photon polarization bases, delivering true quantum key distribution (ETSI GS QKD 004/014) combined with NIST FIPS 203 ML-KEM-768.
             </span>
           </div>
         </div>

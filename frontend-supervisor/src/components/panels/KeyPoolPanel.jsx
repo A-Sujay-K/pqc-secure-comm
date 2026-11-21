@@ -30,7 +30,7 @@ const KeyPoolPanel = () => {
             <Key size={13} strokeWidth={1.8} />
           </div>
           <h2 className="text-[15px] font-medium text-[var(--text-primary)]">
-            QKD Entropy Pool
+            BB84 QKD Entropy Pool
           </h2>
         </div>
       </div>

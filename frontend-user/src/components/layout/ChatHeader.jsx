@@ -8,7 +8,7 @@ import SessionSealModal from '../chat/SessionSealModal';
  * ChatHeader — Cleaned frosted header with:
  * - Mobile Back Button (chevron) returning to contacts list
  * - Contact avatar + name + status
- * - Segmented Lane Control: Standard (ML-KEM-768) vs Critical (QKD-256 Hybrid)
+ * - Segmented Lane Control: Standard (ML-KEM-768) vs Critical (BB84 QKD + ML-KEM-768 Hybrid)
  * - Two circular glass icon buttons: Session Seal Details, HNDL Info
  */
 const ChatHeader = ({
@@ -81,7 +81,7 @@ const ChatHeader = ({
                 ? 'bg-[var(--glass-l2-bg)] text-[var(--text-primary)] shadow-sm border border-[var(--edge-rest)] font-medium'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] border border-transparent opacity-75 hover:opacity-100'
             }`}
-            title="Switch to Standard Lane (ML-KEM-768 + ML-DSA-65)"
+            title="Switch to Standard Lane (NIST FIPS 203 ML-KEM-768 + ML-DSA-65)"
             aria-pressed={!highSecurityMode}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--col-standard)] shrink-0 pointer-events-none" />
@@ -101,11 +101,11 @@ const ChatHeader = ({
                 ? 'bg-[var(--glass-l2-bg)] text-[var(--text-primary)] shadow-sm border border-[var(--col-critical)]/40 font-medium'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] border border-transparent opacity-75 hover:opacity-100'
             }`}
-            title="Switch to Critical Lane (QKD-Sim OTP + ML-KEM-768 Hybrid)"
+            title="Switch to Critical Lane (BB84 QKD + ML-KEM-768 Dual-Layer Hybrid)"
             aria-pressed={highSecurityMode}
           >
             <span className={`w-1.5 h-1.5 rounded-full bg-[var(--col-critical)] shrink-0 pointer-events-none ${highSecurityMode ? 'animate-pulse' : ''}`} />
-            <span className="font-medium pointer-events-none">Critical</span>
+            <span className="font-medium pointer-events-none">BB84 QKD</span>
           </button>
         </div>
 

@@ -116,7 +116,7 @@ const ThreatFeedCard = () => {
                     </div>
 
                     <p className="text-[11px] text-[var(--text-secondary)] leading-tight truncate">
-                      {p.message || (isCritical ? 'High threat detected; routed to Critical QKD' : 'Nominal packet verified under ML-KEM-768')}
+                      {p.message || (isCritical ? 'High threat detected; routed to Critical BB84 QKD' : 'Nominal packet verified under ML-KEM-768')}
                     </p>
 
                     <div className="flex items-center gap-2 mt-1 text-[10px]">

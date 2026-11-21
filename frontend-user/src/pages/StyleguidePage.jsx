@@ -173,7 +173,7 @@ export const StyleguidePage = () => {
             <div className="surface-inner p-4 space-y-2 text-center">
               <span className="text-[10px] font-mono uppercase text-[var(--text-secondary)]">Critical Lane</span>
               <div><Seal lane="critical" size="sm" /></div>
-              <p className="text-[11px] font-mono text-[var(--text-tertiary)]">QKD-256 + HKDF</p>
+              <p className="text-[11px] font-mono text-[var(--text-tertiary)]">BB84 QKD + HKDF</p>
             </div>
 
             <div className="surface-inner p-4 space-y-2 text-center">

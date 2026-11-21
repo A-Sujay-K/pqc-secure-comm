@@ -85,7 +85,7 @@ export const MessageSealPopover = ({ message, isOwn, onClose }) => {
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--surface-elevated)] border border-[var(--edge-rest)]">
             <span className={`w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-[var(--col-critical)]' : 'bg-[var(--col-standard)]'}`} />
             <span className="font-mono text-[10px] font-medium text-[var(--text-primary)]">
-              {isCritical ? 'Critical QKD Hybrid' : 'Standard PQC'}
+              {isCritical ? 'Critical BB84 QKD Hybrid' : 'Standard PQC (ML-KEM-768)'}
             </span>
           </div>
         </div>
@@ -98,7 +98,7 @@ export const MessageSealPopover = ({ message, isOwn, onClose }) => {
               <span>Key Exchange:</span>
             </span>
             <span className="font-mono text-[10px] font-medium text-[var(--text-primary)]">
-              {isCritical ? 'QKD-Sim OTP + ML-KEM-768' : 'ML-KEM-768 (Kyber)'}
+              {isCritical ? 'BB84 QKD (OTP) + ML-KEM-768' : 'NIST ML-KEM-768 (Kyber)'}
             </span>
           </div>
           <div className="flex items-center justify-between text-[11px]">

@@ -139,9 +139,9 @@ const EncryptionSteps = ({ lane, timings, ciphertext_preview }) => {
   const steps = isCritical
     ? [
         {
-          label: '1. Simulated QKD key retrieved',
+          label: '1. BB84 QKD key retrieved',
           icon: Key,
-          desc: 'Single-use 256-bit pre-shared quantum key fetched from reservoir',
+          desc: 'Single-use 256-bit BB84 quantum key fetched from entropy reservoir',
         },
         {
           label: '2. ML-KEM-768 keypair generation',
@@ -156,7 +156,7 @@ const EncryptionSteps = ({ lane, timings, ciphertext_preview }) => {
         {
           label: '4. Hybrid HKDF derivation',
           icon: Hash,
-          desc: 'HKDF-SHA256(qkd_key ∥ kem_secret) → 256-bit AES master key',
+          desc: 'HKDF-SHA256(bb84_qkd_key ∥ ml_kem_secret) → 256-bit AES master key',
         },
         {
           label: '5. AES-256-GCM encryption',
@@ -278,7 +278,7 @@ const DecryptionSteps = ({ lane, timings }) => {
         {
           label: '2. Hybrid HKDF key recovery',
           icon: Hash,
-          desc: 'HKDF-SHA256(qkd_key ∥ kem_secret) → identical 256-bit AES master key',
+          desc: 'HKDF-SHA256(bb84_qkd_key ∥ ml_kem_secret) → identical 256-bit AES master key',
         },
         {
           label: '3. AES-256-GCM decryption & tag verification',
@@ -655,8 +655,8 @@ const QtlParametersView = ({ payload = {} }) => {
 
         <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
           {isCritical
-            ? `Security demand QTL(f) = ${threatScore.toFixed(3)} met or exceeded adaptive threshold τeff = ${tauEff.toFixed(3)} (or S ≥ ${sCrit.toFixed(2)}). Engine allocated 1 quantum key from the 25-key pool and wrapped the message with ML-KEM-768 hybrid lattice encryption.`
-            : `Security demand QTL(f) = ${threatScore.toFixed(3)} is below dynamic threshold τeff = ${tauEff.toFixed(3)} and S < ${sCrit.toFixed(2)}. Message routed via Standard Lane utilizing NIST FIPS 203 ML-KEM-768 encapsulation and NIST FIPS 204 ML-DSA-65 signatures, conserving QKD keys.`}
+            ? `Security demand QTL(f) = ${threatScore.toFixed(3)} met or exceeded adaptive threshold τeff = ${tauEff.toFixed(3)} (or S ≥ ${sCrit.toFixed(2)}). Engine allocated 1 quantum key from the 25-key pool and wrapped the message with BB84 QKD + ML-KEM-768 hybrid lattice encryption.`
+            : `Security demand QTL(f) = ${threatScore.toFixed(3)} is below dynamic threshold τeff = ${tauEff.toFixed(3)} and S < ${sCrit.toFixed(2)}. Message routed via Standard Lane utilizing NIST FIPS 203 ML-KEM-768 encapsulation and NIST FIPS 204 ML-DSA-65 signatures, conserving BB84 QKD keys.`}
         </p>
       </div>
     </div>
@@ -712,7 +712,7 @@ const KeyVault = ({ keys = {}, lane, threatScore = 0.18 }) => {
         </div>
 
         <div className="p-2 rounded bg-[var(--surface-elevated)] border border-[var(--edge-rest)] text-[10px] font-mono text-[var(--text-secondary)]">
-          Threshold Rule: τeff(a) = {tauMin.toFixed(2)} + ({tauMax.toFixed(2)}−{tauMin.toFixed(2)})·(1−a(t)) → Dispatches Critical QKD if QTL ≥ τeff or S ≥ 0.85
+          Threshold Rule: τeff(a) = {tauMin.toFixed(2)} + ({tauMax.toFixed(2)}−{tauMin.toFixed(2)})·(1−a(t)) → Dispatches Critical BB84 QKD if QTL ≥ τeff or S ≥ 0.85
         </div>
       </div>
 
@@ -721,7 +721,7 @@ const KeyVault = ({ keys = {}, lane, threatScore = 0.18 }) => {
         <div className="p-3.5 rounded-xl bg-[var(--surface-inner)] border border-[var(--edge-rest)]">
           <div className="flex items-center gap-1.5 text-xs font-sans font-medium text-[var(--text-primary)] mb-2.5">
             <Key size={13} className="text-[var(--col-critical)]" />
-            <span>Simulated QKD key (256-bit pre-shared entropy)</span>
+            <span>BB84 QKD Key (256-bit quantum key entropy)</span>
           </div>
           <HexField
             label="Key ID (SHA-256 fingerprint)"
@@ -933,7 +933,7 @@ const CryptographicProcessPanel = () => {
                       }`}
                     >
                       {isCritical ? <ShieldAlert size={9} /> : <ShieldCheck size={9} />}
-                      {isCritical ? 'QKD Hybrid' : 'ML-KEM-768'}
+                      {isCritical ? 'BB84 QKD Hybrid' : 'ML-KEM-768'}
                     </span>
                     {totalMs != null && (
                       <span className="text-[10px] font-mono text-[var(--text-secondary)] tabular-nums">
@@ -990,14 +990,14 @@ const CryptographicProcessPanel = () => {
                       )}
                       <h3 className="text-xs sm:text-sm font-medium text-[var(--text-primary)] font-sans">
                         {isCritical
-                          ? 'Critical lane — QKD-256 + ML-KEM-768 + ML-DSA-65'
+                          ? 'Critical lane — BB84 QKD-256 + ML-KEM-768 + ML-DSA-65'
                           : 'Standard lane — ML-KEM-768 + ML-DSA-65'}
                       </h3>
                     </div>
                     <p className="text-xs text-[var(--text-secondary)] font-sans">
                       {lc?.security_standard ||
                         (isCritical
-                          ? 'NIST FIPS 203 + FIPS 204 + AES-256-GCM + Simulated QKD'
+                          ? 'NIST FIPS 203 (ML-KEM) + BB84 QKD + FIPS 204 + AES-256-GCM'
                           : 'NIST FIPS 203 + FIPS 204 + AES-256-GCM')}
                     </p>
                   </div>

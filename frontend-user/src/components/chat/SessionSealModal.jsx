@@ -75,13 +75,13 @@ export const SessionSealModal = ({ isOpen, onClose, highSecurityMode }) => {
                 </span>
                 <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
                   {highSecurityMode
-                    ? 'Hybrid Mode: One-Time Pad QKD-256 combined with ML-KEM-768 lattice KEM'
+                    ? 'Hybrid Mode: BB84 Quantum Key Distribution (QKD-256) combined with ML-KEM-768 lattice KEM'
                     : 'NIST Standard Mode: Pure post-quantum ML-KEM-768 lattice key encapsulation'}
                 </p>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-full text-[10px] bg-[var(--surface-elevated)] border border-[var(--edge-rest)] text-[var(--text-primary)]">
-              FIPS Compliant
+              {highSecurityMode ? 'BB84 + FIPS 203' : 'FIPS Compliant'}
             </span>
           </div>
 
@@ -90,13 +90,15 @@ export const SessionSealModal = ({ isOpen, onClose, highSecurityMode }) => {
             <div className="p-3.5 rounded-xl bg-[var(--surface-inner)] border border-[var(--edge-rest)]">
               <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-primary)] mb-1">
                 <Key size={14} className="text-[var(--text-secondary)]" />
-                <span>Primary KEM Protocol</span>
+                <span>{highSecurityMode ? 'Hybrid Key Exchange' : 'Primary KEM Protocol'}</span>
               </div>
               <div className="font-mono text-xs text-[var(--col-standard)] mb-1">
-                ML-KEM-768 (FIPS 203)
+                {highSecurityMode ? 'BB84 QKD + ML-KEM-768' : 'ML-KEM-768 (FIPS 203)'}
               </div>
               <p className="text-[11px] text-[var(--text-tertiary)] leading-relaxed">
-                Module Lattice Key Encapsulation Mechanism. Provides 128-bit post-quantum security margin against quantum polynomial search algorithms.
+                {highSecurityMode
+                  ? 'Dual-Layer BB84 Quantum Key Distribution Protocol combined with Module Lattice KEM via HKDF-SHA256 for unconditional information-theoretic confidentiality.'
+                  : 'Module Lattice Key Encapsulation Mechanism. Provides 128-bit post-quantum security margin against quantum polynomial search algorithms.'}
               </p>
             </div>
 

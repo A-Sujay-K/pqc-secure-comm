@@ -106,7 +106,7 @@ export default function AccessSection() {
             title="SUPERVISOR CONSOLE"
             badge="TELEMETRY"
             badgeColor="var(--col-critical)"
-            description="Inspect real-time telemetry, monitor active QKD key reservoirs, observe threat scores, and control lane thresholds."
+            description="Inspect real-time telemetry, monitor active BB84 QKD key reservoirs, observe threat scores, and control lane thresholds."
             primaryText="LAUNCH CONSOLE ↗"
             primaryHref={supervisorUrl}
             secondaryText="LIVE ARBITRATION"

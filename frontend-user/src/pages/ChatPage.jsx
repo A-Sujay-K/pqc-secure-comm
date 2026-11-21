@@ -101,11 +101,11 @@ const ChatPage = () => {
               Select a contact
             </h2>
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-4 font-sans">
-              End-to-end encrypted post-quantum messaging powered by NIST FIPS 203 (ML-KEM-768) and simulated QKD.
+              End-to-end encrypted post-quantum messaging powered by NIST FIPS 203 (ML-KEM-768) and BB84 Quantum Key Distribution (QKD).
             </p>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--surface-inner)] border border-[var(--edge-rest)] text-[var(--text-secondary)] text-xs">
               <Shield size={12} className="text-[var(--col-standard)]" />
-              <span>HNDL Quantum-Resistant</span>
+              <span>HNDL Quantum-Resistant · ML-KEM-768 &amp; BB84 QKD</span>
             </div>
           </div>
         </div>

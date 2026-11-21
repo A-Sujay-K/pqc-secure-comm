@@ -7,7 +7,7 @@ const Badge = ({ variant = ENCRYPTION_LANES.STANDARD, label, className = '' }) =
   return (
     <Seal 
       lane={isQKD ? 'critical' : 'standard'} 
-      label={label || (isQKD ? 'QKD-256' : 'ML-KEM-768')}
+      label={label || (isQKD ? 'BB84 QKD' : 'ML-KEM-768')}
       className={className} 
     />
   );

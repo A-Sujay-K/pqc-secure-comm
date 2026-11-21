@@ -25,7 +25,7 @@ export const Seal = ({
     config = {
       icon: ShieldAlert,
       color: 'text-critical border-critical/35 bg-critical/10',
-      defaultLabel: 'QKD-256',
+      defaultLabel: 'BB84 QKD',
     };
   } else if (isVerified) {
     config = {

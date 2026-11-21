@@ -122,7 +122,7 @@ const PolicyOverrideModal = ({ isOpen, onClose }) => {
                 )}
               </div>
               <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                Bypasses QKD key pool. All traffic routed through NIST FIPS 203 ML-KEM-768 with zero QKD key consumption.
+                Bypasses BB84 QKD key pool. All traffic routed through NIST FIPS 203 ML-KEM-768 with zero QKD key consumption.
               </p>
             </div>
           </div>
@@ -142,7 +142,7 @@ const PolicyOverrideModal = ({ isOpen, onClose }) => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-[var(--text-primary)]">
-                  Force All Critical (QKD-256 + ML-KEM)
+                  Force All Critical (BB84 QKD-256 + ML-KEM-768)
                 </span>
                 {selectedMode === 'force_critical' && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--surface-inner)] border border-[var(--edge-rest)] text-[var(--col-critical)] font-medium">
@@ -151,7 +151,7 @@ const PolicyOverrideModal = ({ isOpen, onClose }) => {
                 )}
               </div>
               <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                Maximum security mode. Every message consumes an OTP key from the 25-key QKD reservoir.
+                Maximum security mode. Every message consumes an OTP key from the 25-key BB84 QKD reservoir combined with ML-KEM-768.
               </p>
             </div>
           </div>

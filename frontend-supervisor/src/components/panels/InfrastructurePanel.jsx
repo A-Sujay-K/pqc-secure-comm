@@ -24,12 +24,12 @@ const InfrastructurePanel = () => {
 
   const clusterNodes = [
     {
-      name: 'QKD Entropic Enclave (HSM Hub)',
-      endpoint: 'BB84 Entanglement / Physical Hub',
+      name: 'BB84 QKD Entropic Enclave (HSM Hub)',
+      endpoint: 'BB84 Photon Polarization / Physical Hub',
       role: 'One-Time Pad Quantum Entropy Enclave',
       status: 'Nominal',
       metric: `${availableKeys} / ${maxCapacity} keys`,
-      details: 'SNSPD detectors online · QBER: 1.24% · 810nm pulsed pair source',
+      details: 'SNSPD detectors online · QBER: 1.24% · 810nm pulsed photon source',
       icon: Radio,
     },
     {
@@ -121,7 +121,7 @@ const InfrastructurePanel = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-medium text-[var(--text-primary)]">
-                  QKD Key Reservoir &amp; Hardware Enclave (ETSI GS QKD 014)
+                  BB84 QKD Key Reservoir &amp; Hardware Enclave (ETSI GS QKD 014)
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-sans bg-[var(--surface-inner)] border border-[var(--edge-rest)] text-[var(--col-verified)]">
                   Confidential Ring Buffer

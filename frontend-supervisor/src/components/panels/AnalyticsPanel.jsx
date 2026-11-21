@@ -24,7 +24,7 @@ const AnalyticsPanel = () => {
     { label: 'ML-KEM-768 Encapsulation Frame', bytes: 1088, pct: 71, note: 'Lattice ciphertext (NIST FIPS 203)' },
     { label: 'AES-256-GCM Payload & Auth Tag', bytes: 320, pct: 21, note: 'Encrypted message body + 16-byte Poly1305/GCM tag' },
     { label: 'Packet Headers & Routing Seal', bytes: 96, pct: 6, note: 'Cryptographic lane metadata & sender seal' },
-    { label: 'QKD OTP Entropy Tag (Critical Lane)', bytes: 32, pct: 2, note: 'One-Time Pad pad ID & XOR authenticator' },
+    { label: 'BB84 QKD OTP Entropy Tag (Critical Lane)', bytes: 32, pct: 2, note: 'BB84 Quantum Key Distribution key ID & XOR authenticator' },
   ];
 
   return (

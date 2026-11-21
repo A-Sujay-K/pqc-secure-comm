@@ -122,7 +122,7 @@ const MessageBubble = ({ message, isOwn, hasTail = true }) => {
               type="button"
               onClick={() => setShowSealPopover((prev) => !prev)}
               className="p-0.5 rounded hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--edge-hover)]"
-              title={isQKD ? 'Critical Lane (QKD-Sim) — Click for Message Seal' : 'Standard Lane (ML-KEM-768) — Click for Message Seal'}
+              title={isQKD ? 'Critical Lane (BB84 QKD + ML-KEM-768 Hybrid) — Click for Message Seal' : 'Standard Lane (ML-KEM-768) — Click for Message Seal'}
               aria-label="View message seal"
             >
               {isQKD ? (

@@ -167,7 +167,7 @@ const MessageInput = ({ highSecurityMode }) => {
             isLocked
               ? `Add @${activeChat?.username || 'sender'} to contacts to send a message.`
               : (highSecurityMode 
-                  ? "Type high-priority message (Critical QKD lane)..." 
+                  ? "Type high-priority message (BB84 QKD + ML-KEM lane)..." 
                   : "Type a message...")
           }
           className={`flex-1 bg-transparent border-none text-[var(--text-primary)] text-xs sm:text-sm focus:outline-none resize-none max-h-[100px] py-1.5 placeholder-[var(--text-tertiary)] font-sans ${

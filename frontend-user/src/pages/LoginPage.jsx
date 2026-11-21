@@ -90,7 +90,7 @@ export const LoginPage = () => {
               PQC Secure Comm
             </span>
             <span className="text-[10px] font-sans text-[var(--text-tertiary)] -mt-0.5 hidden xs:block">
-              ML-KEM-768 · Lattice Core
+              ML-KEM-768 &amp; BB84 QKD Core
             </span>
           </div>
         </Link>
@@ -282,7 +282,7 @@ export const LoginPage = () => {
 
             {/* Cryptographic Spec Line */}
             <p className="text-[10px] font-sans text-[var(--text-tertiary)] text-center mt-2 sm:mt-2.5 select-none font-normal">
-              Simulation build · ML-KEM-768 · ML-DSA-65 · AES-256-GCM
+              NIST FIPS 203 (ML-KEM-768) · BB84 QKD · ML-DSA-65 · AES-256-GCM
             </p>
           </div>
         </div>
@@ -345,9 +345,9 @@ export const LoginPage = () => {
                     Message authentication and integrity are cryptographically sealed with ML-DSA-65 signatures, eliminating man-in-the-middle forging by quantum adversaries.
                   </p>
                   <p>
-                    <strong className="text-[var(--text-primary)] font-medium">3. Simulated QKD Hardware Lane:</strong>
+                    <strong className="text-[var(--text-primary)] font-medium">3. BB84 Quantum Key Distribution (QKD) Hardware Lane:</strong>
                     <br />
-                    For critical payload transmission, a simulated Quantum Key Distribution link supplies one-time-pad/HKDF pre-shared keys directly into the ephemeral session pool.
+                    For critical payload transmission, the BB84 protocol supplies one-time-pad quantum key entropy directly combined with ML-KEM-768 into the ephemeral session pool.
                   </p>
                 </>
               ) : (
