@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { X, ShieldCheck, ShieldAlert, Cpu, Clock, CheckCircle, Lock, Hash, Zap } from 'lucide-react';
+import { estimateThreatScore } from '../../utils/sensitivity';
 
 /**
  * MessageSealPopover — Next-Level Liquid Glass Cryptographic Message Seal
@@ -12,7 +13,9 @@ export const MessageSealPopover = ({ message, isOwn, onClose }) => {
   const popoverRef = useRef(null);
   const lane = message.encryption_lane || 'standard';
   const isCritical = lane === 'critical' || lane === 'QKD' || lane === 'qkd';
-  const threatScore = message.threat_score != null ? Number(message.threat_score).toFixed(3) : (isCritical ? '0.850' : '0.180');
+  const threatScore = message.threat_score != null 
+    ? Number(message.threat_score).toFixed(3) 
+    : estimateThreatScore(message.content, { name: message.file_name, size: message.file_size }, isCritical).toFixed(3);
   const messageId = message.id ? String(message.id).slice(-8) : 'e3a1f90b';
 
   useEffect(() => {

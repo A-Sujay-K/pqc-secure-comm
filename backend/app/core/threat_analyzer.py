@@ -72,6 +72,7 @@ async def analyze_payload(
     redis_client,
     settings: Settings,
     get_available_count_func,
+    file_data: bytes | None = None,
 ) -> tuple[float, str, int, float]:
     """
     Orchestrates threat analysis to determine the appropriate encryption lane.
@@ -82,7 +83,7 @@ async def analyze_payload(
     from app.utils.sensitivity import get_sensitivity_score
     
     # 1. Compute sensitivity S in [0.0, 1.0]
-    sensitivity = get_sensitivity_score(filename, content, high_security)
+    sensitivity = get_sensitivity_score(filename, content, high_security, file_data)
         
     # 2. Get available QKD keys A_K from pool
     available_keys = await get_available_count_func(redis_client)

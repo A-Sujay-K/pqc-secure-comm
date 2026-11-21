@@ -44,14 +44,36 @@ async def test_determine_lane_switching(custom_settings):
 
 def test_tiered_sensitivity_scoring():
     from app.utils.sensitivity import get_sensitivity_score
-    # Low tier
-    assert get_sensitivity_score(None, "hello there team, let's schedule a meeting") == 0.15
-    assert get_sensitivity_score("team_photo.jpg", "routine photo") == 0.25
-    # Medium tier
-    assert get_sensitivity_score(None, "please review the financial quarterly audit") == 0.50
-    assert get_sensitivity_score("quarterly_report.pdf", "report") == 0.45
-    # High tier
-    assert get_sensitivity_score(None, "here is the password for the account") == 0.85
-    assert get_sensitivity_score("keys.env", "secret") == 0.85
+    # Low tier dynamic ranges
+    s_low1 = get_sensitivity_score(None, "hello there team, let's schedule a meeting")
+    s_low2 = get_sensitivity_score("team_photo.jpg", "routine photo")
+    assert 0.10 <= s_low1 <= 0.35
+    assert 0.15 <= s_low2 <= 0.35
+    assert s_low1 != s_low2  # Ensures non-constant scoring
+    
+    # Medium tier dynamic ranges
+    s_med1 = get_sensitivity_score(None, "please review the financial quarterly audit")
+    s_med2 = get_sensitivity_score("quarterly_report.pdf", "report")
+    assert 0.40 <= s_med1 <= 0.70
+    assert 0.35 <= s_med2 <= 0.65
+    assert s_med1 != s_med2  # Ensures non-constant scoring
+    
+    # High tier dynamic ranges
+    s_high1 = get_sensitivity_score(None, "here is the password for the account")
+    s_high2 = get_sensitivity_score("keys.env", "secret")
+    assert 0.75 <= s_high1 <= 0.99
+    assert 0.80 <= s_high2 <= 0.99
+    
+    # Multi-keyword compounding: multiple secrets elevate threat above single secret
+    s_multi = get_sensitivity_score(None, "CRITICAL: urgent master key, root password, and secret api_key leaked")
+    assert s_multi > s_high1
+    
     # High security override
-    assert get_sensitivity_score(None, "ordinary message", high_security=True) == 0.95
+    s_hs = get_sensitivity_score(None, "ordinary message", high_security=True)
+    assert s_hs >= 0.90
+    
+    # Ensures scores dynamically vary with respect to message content
+    s_a = get_sensitivity_score(None, "Can we meet tomorrow at 10am?")
+    s_b = get_sensitivity_score(None, "Here is the invoice and payroll budget")
+    s_c = get_sensitivity_score(None, "Here is the master password and access_token")
+    assert s_a < s_b < s_c

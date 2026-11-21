@@ -31,11 +31,12 @@ async def process_message(content: str, filename: str | None, file_data: bytes |
         sender_priority, 
         redis_client, 
         settings, 
-        get_available_count
+        get_available_count,
+        file_data
     )
     
     from app.utils.sensitivity import get_sensitivity_score
-    sensitivity = get_sensitivity_score(filename, content, high_security)
+    sensitivity = get_sensitivity_score(filename, content, high_security, file_data)
     
     k_max = settings.K_MAX if settings.K_MAX > 0 else 25
     a_t = round(max(0.0, min(1.0, available_keys / k_max)), 4)

@@ -201,7 +201,7 @@ export const ChatProvider = ({ children }) => {
 
     // Instant optimistic client-side threat & sensitivity evaluation
     const isCritical = isCriticalPayload(content, file, isHighSecurity);
-    const estimatedThreat = estimateThreatScore(content, file, isHighSecurity);
+    const estimatedThreat = estimateThreatScore(content, file, isHighSecurity, user?.priority || 5);
 
     // Instant optimistic client-side message so sender immediately sees their message
     const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
