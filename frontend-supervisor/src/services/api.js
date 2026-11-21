@@ -11,7 +11,7 @@ const baseURL = (apiBase && !apiBase.includes('localhost'))
 
 const api = axios.create({
   baseURL,
-  timeout: 10000,
+  timeout: 45000,
 });
 
 export const fetchTelemetrySnapshot = async () => {

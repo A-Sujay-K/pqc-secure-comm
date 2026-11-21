@@ -55,6 +55,28 @@ export const ChatProvider = ({ children }) => {
     }
   }, [user, fetchContacts]);
 
+  // Auto-sync contacts and active chat history when app is foregrounded or regains focus
+  useEffect(() => {
+    if (!user) return;
+    const handleSync = () => {
+      fetchContacts();
+      if (activeChat?.id) {
+        loadHistory(activeChat.id);
+      }
+    };
+
+    window.addEventListener('focus', handleSync);
+    const handleVisibility = () => {
+      if (!document.hidden) handleSync();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('focus', handleSync);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [user, activeChat, fetchContacts, loadHistory]);
+
   useEffect(() => {
     if (!wsManager) return;
 

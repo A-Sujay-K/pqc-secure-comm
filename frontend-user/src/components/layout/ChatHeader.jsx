@@ -34,11 +34,11 @@ const ChatHeader = ({
           <button
             type="button"
             onClick={onBack}
-            className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-[var(--surface-inner)] border border-[var(--edge-rest)] text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] active:scale-90 transition-all cursor-pointer shrink-0"
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-full bg-[var(--surface-inner)] border border-[var(--edge-rest)] text-[var(--text-primary)] hover:bg-[var(--surface-elevated)] active:scale-90 transition-all cursor-pointer shrink-0 touch-manipulation"
             title="Back to contacts"
             aria-label="Back to contacts"
           >
-            <ChevronLeft size={18} strokeWidth={2.2} />
+            <ChevronLeft size={20} strokeWidth={2.2} />
           </button>
         )}
         <Avatar 

@@ -8,6 +8,25 @@ class WebSocketManager {
     this.reconnectAttempts = 0;
     this.shouldReconnect = true;
     this.pingInterval = null;
+
+    if (typeof window !== 'undefined') {
+      // Reconnect when mobile device wakes up or tab is foregrounded
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && this.token && !this.isConnected() && this.shouldReconnect) {
+          console.log('App foregrounded, reconnecting WebSocket...');
+          this.reconnectAttempts = 0;
+          this.connect(this.token);
+        }
+      });
+      // Reconnect when network returns online
+      window.addEventListener('online', () => {
+        if (this.token && !this.isConnected() && this.shouldReconnect) {
+          console.log('Network online, reconnecting WebSocket...');
+          this.reconnectAttempts = 0;
+          this.connect(this.token);
+        }
+      });
+    }
   }
 
   connect(token) {
@@ -18,9 +37,10 @@ class WebSocketManager {
       this.ws.close();
     }
 
+    const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
     const wsBase = import.meta.env.VITE_WS_URL;
     let wsUrl;
-    if (wsBase) {
+    if (wsBase && (!wsBase.includes('localhost') || isLocal)) {
       let cleanBase = wsBase.trim().replace(/\/+$/, '');
       if (cleanBase.startsWith('http://')) {
         cleanBase = 'ws://' + cleanBase.slice(7);
@@ -29,22 +49,10 @@ class WebSocketManager {
       }
       const baseWithWs = cleanBase.endsWith('/ws') ? cleanBase : `${cleanBase}/ws`;
       wsUrl = `${baseWithWs}/chat/${token}`;
+    } else if (isLocal) {
+      wsUrl = `ws://localhost:8000/ws/chat/${token}`;
     } else {
-      const apiBase = import.meta.env.VITE_API_URL;
-      if (apiBase && (apiBase.startsWith('http://') || apiBase.startsWith('https://'))) {
-        try {
-          const parsed = new URL(apiBase);
-          const proto = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
-          wsUrl = `${proto}//${parsed.host}/ws/chat/${token}`;
-        } catch {
-          const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          wsUrl = `${proto}//pqc-secure-comm-backend.onrender.com/ws/chat/${token}`;
-        }
-      } else {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        wsUrl = `${protocol}//${host}/ws/chat/${token}`;
-      }
+      wsUrl = `wss://pqc-secure-comm-backend.onrender.com/ws/chat/${token}`;
     }
     
     this.ws = new WebSocket(wsUrl);

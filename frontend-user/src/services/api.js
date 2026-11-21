@@ -11,6 +11,7 @@ const baseURL = (apiBase && !apiBase.includes('localhost'))
 
 const api = axios.create({
   baseURL,
+  timeout: 45000,
 });
 
 api.interceptors.request.use((config) => {

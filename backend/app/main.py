@@ -108,6 +108,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/", tags=["Health"])
+async def root_status():
+    return {
+        "service": "PQC Secure Comm API",
+        "status": "online",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/api/v1/health",
+        "telemetry": "/api/v1/telemetry/snapshot"
+    }
+
+@app.get("/health", tags=["Health"])
+async def direct_health_check():
+    return {"status": "healthy", "service": "pqc-secure-comm"}
+
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 if auth_router:

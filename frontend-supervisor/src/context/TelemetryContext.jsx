@@ -84,7 +84,18 @@ export const TelemetryProvider = ({ children }) => {
 
     const connection = createTelemetryConnection(handleMessage, setIsConnected);
 
+    // Auto-retry polling until initial snapshot is loaded (handles Render cold start wake up)
+    const retryInterval = setInterval(() => {
+      setSnapshot((current) => {
+        if (!current) {
+          refetchSnapshot();
+        }
+        return current;
+      });
+    }, 5000);
+
     return () => {
+      clearInterval(retryInterval);
       connection.disconnect();
     };
   }, [handleMessage, refetchSnapshot]);
