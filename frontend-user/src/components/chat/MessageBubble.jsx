@@ -48,6 +48,9 @@ const MessageBubble = ({ message, isOwn, hasTail = true }) => {
   const fillColor = isQKD
     ? (isOwn ? 'var(--bubble-critical-sent-bg)' : 'var(--bubble-critical-recv-bg)')
     : (isOwn ? 'var(--bubble-sent-bg)' : 'var(--bubble-recv-bg)');
+  const strokeColor = isQKD
+    ? 'var(--bubble-critical-edge, rgba(245, 158, 11, 0.50))'
+    : 'var(--edge-rest)';
 
   return (
     <div className={`flex w-full ${isOwn ? 'justify-end pr-2' : 'justify-start pl-2'} select-text relative`}>
@@ -58,7 +61,7 @@ const MessageBubble = ({ message, isOwn, hasTail = true }) => {
           // Fallback before SVG measurement
           backgroundColor: dims.w > 0 ? 'transparent' : fillColor,
           borderRadius: '18px',
-          border: dims.w > 0 ? 'none' : '1px solid var(--edge-rest)',
+          border: dims.w > 0 ? 'none' : `1px solid ${strokeColor}`,
         }}
       >
         {/* Single-shape SVG background with seamless tail */}
@@ -67,18 +70,28 @@ const MessageBubble = ({ message, isOwn, hasTail = true }) => {
             className="absolute inset-0 pointer-events-none overflow-visible z-0"
             width={dims.w}
             height={dims.h}
+            style={{
+              filter: isQKD ? 'drop-shadow(0 2px 10px rgba(245, 158, 11, 0.16))' : 'none'
+            }}
           >
             <path 
               d={pathD}
               fill={fillColor}
-              stroke="var(--edge-rest)"
-              strokeWidth="1"
+              stroke={strokeColor}
+              strokeWidth={isQKD ? "1.5" : "1"}
             />
           </svg>
         )}
 
         {/* Content container inside the bubble */}
         <div className="relative z-10 font-sans">
+          {/* Critical Lane Micro-Badge */}
+          {isQKD && (
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 mb-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] font-semibold text-amber-500 select-none">
+              <ShieldAlert size={10} className="shrink-0 text-amber-500 animate-pulse" />
+              <span>Critical Lane · BB84 QKD</span>
+            </div>
+          )}
           {/* File Attachment */}
           {(message.file_url || message.file_name) && (
             <div className="mb-2 p-2 bg-[var(--surface-inner)] rounded-xl border border-[var(--edge-rest)] flex items-center gap-2.5">

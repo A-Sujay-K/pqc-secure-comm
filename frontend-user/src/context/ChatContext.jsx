@@ -3,6 +3,7 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../hooks/useAuth';
 import api, { getContacts, addContact, removeContact } from '../services/api';
 import { API_ENDPOINTS, WS_EVENTS } from '../utils/constants';
+import { isCriticalPayload, estimateThreatScore } from '../utils/sensitivity';
 
 export const ChatContext = createContext();
 
@@ -82,21 +83,29 @@ export const ChatProvider = ({ children }) => {
 
     const unsubs = [
       wsManager.on(WS_EVENTS.CHAT_MESSAGE, (payload) => {
-        const peerId = payload.sender_id === user?.id ? payload.recipient_id : payload.sender_id;
+        const currentUserId = user?.id;
+        const isSelf = currentUserId && (String(payload.sender_id) === String(currentUserId));
+        const peerId = isSelf ? payload.recipient_id : payload.sender_id;
+
         setMessages(prev => {
           const next = new Map(prev);
           const chatMsgs = next.get(peerId) || [];
 
           // If message is from current user, replace the matching optimistic temporary message
-          if (payload.sender_id === user?.id) {
+          if (isSelf) {
             const tempIdx = chatMsgs.findIndex(m => 
-              typeof m.id === 'string' && m.id.startsWith('temp-') && 
-              m.content === payload.content && 
-              (!m.file_name || m.file_name === payload.file_name)
+              (payload.client_msg_id && (m.id === payload.client_msg_id || m.client_msg_id === payload.client_msg_id)) ||
+              (typeof m.id === 'string' && m.id.startsWith('temp-') && 
+               (m.content || '').trim() === (payload.content || '').trim() && 
+               (!m.file_name || m.file_name === payload.file_name))
             );
             if (tempIdx !== -1) {
               const updatedList = [...chatMsgs];
-              updatedList[tempIdx] = payload;
+              updatedList[tempIdx] = {
+                ...updatedList[tempIdx],
+                ...payload,
+                status: 'delivered'
+              };
               next.set(peerId, updatedList);
               return next;
             }
@@ -118,12 +127,40 @@ export const ChatProvider = ({ children }) => {
           return prev;
         });
         
-        if (activeChat?.id !== peerId && payload.sender_id !== user?.id) {
+        if (activeChat?.id !== peerId && !isSelf) {
           setUnreadCounts(prev => ({
             ...prev,
             [peerId]: (prev[peerId] || 0) + 1
           }));
         }
+      }),
+      wsManager.on(WS_EVENTS.DELIVERY_CONFIRMATION, (payload) => {
+        if (!payload) return;
+        setMessages(prev => {
+          const next = new Map(prev);
+          let modified = false;
+          for (const [peerId, list] of next.entries()) {
+            const idx = list.findIndex(m => 
+              (payload.client_msg_id && (m.id === payload.client_msg_id || m.client_msg_id === payload.client_msg_id)) ||
+              m.id === payload.message_id ||
+              (typeof m.id === 'string' && m.id.startsWith('temp-') && m.status === 'sending')
+            );
+            if (idx !== -1) {
+              const updated = [...list];
+              updated[idx] = {
+                ...updated[idx],
+                id: payload.message_id || updated[idx].id,
+                encryption_lane: payload.encryption_lane || updated[idx].encryption_lane,
+                threat_score: payload.threat_score ?? updated[idx].threat_score,
+                status: 'delivered'
+              };
+              next.set(peerId, updated);
+              modified = true;
+              break;
+            }
+          }
+          return modified ? next : prev;
+        });
       }),
       wsManager.on(WS_EVENTS.TYPING_START, (payload) => {
         setTypingUsers(prev => {
@@ -157,23 +194,28 @@ export const ChatProvider = ({ children }) => {
     ];
 
     return () => unsubs.forEach(unsub => unsub());
-  }, [wsManager, activeChat, user]);
+  }, [wsManager, activeChat, user, fetchContacts]);
 
   const sendMessage = (recipientId, content, file = null, isHighSecurity = false) => {
     if (!content && !file) return;
+
+    // Instant optimistic client-side threat & sensitivity evaluation
+    const isCritical = isCriticalPayload(content, file, isHighSecurity);
+    const estimatedThreat = estimateThreatScore(content, file, isHighSecurity);
 
     // Instant optimistic client-side message so sender immediately sees their message
     const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const optimisticMsg = {
       id: optimisticId,
+      client_msg_id: optimisticId,
       sender_id: user?.id,
       recipient_id: recipientId,
       content: content || '',
       file_name: file?.name || null,
       file_url: file?.data ? `data:${file.type || 'application/octet-stream'};base64,${file.data}` : null,
       file_size: file?.size || null,
-      encryption_lane: isHighSecurity ? 'critical' : 'standard',
-      threat_score: 0.1,
+      encryption_lane: isCritical ? 'critical' : 'standard',
+      threat_score: estimatedThreat,
       is_read: false,
       is_contact: true,
       created_at: new Date().toISOString(),
@@ -188,6 +230,7 @@ export const ChatProvider = ({ children }) => {
     });
 
     wsManager.send(WS_EVENTS.CHAT_MESSAGE, {
+      client_msg_id: optimisticId,
       recipient_id: recipientId,
       content,
       high_security: isHighSecurity,

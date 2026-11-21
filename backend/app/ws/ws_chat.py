@@ -50,6 +50,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                 msg_type = msg_data.get("type")
                 
                 if msg_type == "chat_message":
+                    client_msg_id = msg_data.get("client_msg_id")
                     content = msg_data.get("content")
                     filename = msg_data.get("file_name")
                     file_data_b64 = msg_data.get("file_data")
@@ -104,6 +105,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                         # Enqueue into Redis priority queue for later delivery
                         queue_position = await enqueue(
                             redis_client, {
+                                "client_msg_id": client_msg_id,
                                 "sender_id": user_id,
                                 "receiver_id": recipient_id,
                                 "content": content,
@@ -118,12 +120,21 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                             qtl=routing_result["threat_score"]
                         )
                         
-                        # Send security banner to sender
+                        # Send security banner & queued delivery confirmation to sender
                         await manager.send_to_user(user_id, {
                             "type": "security_banner",
                             "payload": {
                                 "message": "Securing connection... waiting for quantum key generation.",
                                 "queue_position": queue_position + 1,
+                            }
+                        })
+                        await manager.send_to_user(user_id, {
+                            "type": "delivery_confirmation",
+                            "payload": {
+                                "client_msg_id": client_msg_id,
+                                "status": "queued",
+                                "encryption_lane": routing_result["lane"],
+                                "threat_score": routing_result["threat_score"],
                             }
                         })
                         
@@ -234,6 +245,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                             "type": "chat_message",
                             "payload": {
                                 "id": msg_id,
+                                "client_msg_id": client_msg_id,
                                 "sender_id": user_id,
                                 "recipient_id": recipient_id,
                                 "content": content,
@@ -254,6 +266,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, token: str):
                             "type": "delivery_confirmation",
                             "payload": {
                                 "message_id": msg_id,
+                                "client_msg_id": client_msg_id,
                                 "status": "delivered",
                                 "encryption_lane": routing_result["lane"],
                                 "threat_score": routing_result["threat_score"],

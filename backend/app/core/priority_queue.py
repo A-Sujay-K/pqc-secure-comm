@@ -171,6 +171,7 @@ async def release_queued_messages(redis_client, db, key_pool_service, crypto_eng
                 "type": "chat_message",
                 "payload": {
                     "id": msg_id,
+                    "client_msg_id": message_data.get("client_msg_id"),
                     "sender_id": sender_id,
                     "recipient_id": recipient_id,
                     "content": message_data.get("content"),
@@ -195,6 +196,7 @@ async def release_queued_messages(redis_client, db, key_pool_service, crypto_eng
                     "type": "delivery_confirmation",
                     "payload": {
                         "message_id": msg_id,
+                        "client_msg_id": message_data.get("client_msg_id"),
                         "status": "delivered_from_queue",
                         "encryption_lane": "critical",
                         "wait_time": wait_time
